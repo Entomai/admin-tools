@@ -1,0 +1,11 @@
+{
+    "id": "entomai/admin-tools",
+    "name": "Admin Tools",
+    "namespace": "Botble\\AdminTools\\",
+    "provider": "Botble\\AdminTools\\Providers\\AdminToolsServiceProvider",
+    "author": "Entomai",
+    "url": "https://entomai.com",
+    "version": "1.0.0",
+    "description": "Admin tools and shortcuts for Botble CMS",
+    "minimum_core_version": "7.6.6"
+}

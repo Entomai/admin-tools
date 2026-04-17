@@ -1,0 +1,181 @@
+.entomai-header-left {
+    min-width: 0;
+}
+
+header.navbar.entomai-header-left-navbar.navbar-expand-md .navbar-brand {
+    width: 10rem !important;
+}
+
+.entomai-header-left > .nav-item {
+    margin-right: 0;
+}
+
+.entomai-header-left .nav-link,
+.entomai-header-left .dropdown-item {
+    align-items: center;
+    display: flex;
+    gap: 0.375rem;
+    white-space: nowrap;
+}
+
+.entomai-fast-menu {
+    min-width: 0;
+}
+
+.entomai-fast-menu .nav-link {
+    min-height: 2rem;
+}
+
+.entomai-fast-menu > .dropdown-menu {
+    min-width: 13rem;
+}
+
+.entomai-header-notification {
+    --entomai-notification-color: 32, 107, 196;
+}
+
+.entomai-header-notification--blue {
+    --entomai-notification-color: 32, 107, 196;
+}
+
+.entomai-header-notification--teal {
+    --entomai-notification-color: 12, 166, 120;
+}
+
+.entomai-header-notification--amber {
+    --entomai-notification-color: 245, 159, 0;
+}
+
+.entomai-header-notification--red {
+    --entomai-notification-color: 214, 57, 57;
+}
+
+.entomai-header-notification--green {
+    --entomai-notification-color: 47, 179, 68;
+}
+
+.entomai-header-notification--cyan {
+    --entomai-notification-color: 23, 162, 184;
+}
+
+.entomai-header-notification--gray {
+    --entomai-notification-color: 102, 115, 130;
+}
+
+.entomai-header-notification__trigger {
+    background: rgba(var(--entomai-notification-color), 0.12);
+    border-radius: 6px;
+    color: rgb(var(--entomai-notification-color));
+    height: 2rem;
+    justify-content: center;
+    position: relative;
+    width: 2rem;
+}
+
+.entomai-header-notification__trigger:hover,
+.entomai-header-notification__trigger.show {
+    background: rgba(var(--entomai-notification-color), 0.2);
+    color: rgb(var(--entomai-notification-color));
+}
+
+.entomai-header-notification__badge {
+    align-items: center;
+    background: rgb(var(--entomai-notification-color));
+    border: 2px solid var(--tblr-body-bg);
+    border-radius: 999px;
+    color: #ffffff;
+    display: inline-flex;
+    font-size: 0.625rem;
+    font-weight: 700;
+    height: 1.125rem;
+    justify-content: center;
+    line-height: 1;
+    min-width: 1.125rem;
+    padding: 0 0.25rem;
+    position: absolute;
+    right: -0.375rem;
+    top: -0.375rem;
+}
+
+.entomai-header-notification__menu {
+    max-width: calc(100vw - 2rem);
+    width: 24rem;
+}
+
+.entomai-header-notification__header {
+    gap: 0.75rem;
+}
+
+.entomai-header-notification__header-icon,
+.entomai-header-notification__item-icon {
+    background: rgba(var(--entomai-notification-color), 0.12);
+    color: rgb(var(--entomai-notification-color));
+}
+
+.entomai-header-notification__header-icon {
+    align-items: center;
+    border-radius: 8px;
+    display: inline-flex;
+    flex: 0 0 2.25rem;
+    height: 2.25rem;
+    justify-content: center;
+    width: 2.25rem;
+}
+
+.entomai-header-notification__heading {
+    min-width: 0;
+}
+
+.entomai-header-notification__list {
+    max-height: 24rem;
+    overflow: auto;
+}
+
+.entomai-header-notification__item {
+    padding-bottom: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+.entomai-header-notification__empty {
+    align-items: center;
+    color: var(--tblr-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    justify-content: center;
+    min-height: 8rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.entomai-header-notification__empty-icon {
+    align-items: center;
+    background: rgba(var(--entomai-notification-color), 0.12);
+    border-radius: 8px;
+    color: rgb(var(--entomai-notification-color));
+    display: inline-flex;
+    height: 2.5rem;
+    justify-content: center;
+    width: 2.5rem;
+}
+
+.entomai-header-left .dropdown-menu .dropend {
+    position: relative;
+}
+
+.entomai-header-left .dropdown-menu .dropend > .dropdown-menu {
+    left: 100%;
+    margin-left: 0.125rem;
+    margin-top: -0.5rem;
+    top: 0;
+}
+
+.entomai-header-left .dropdown-menu .dropend > .dropdown-toggle::after {
+    margin-left: auto;
+}
+
+@media (max-width: 575.98px) {
+    .entomai-header-left .nav-link-title {
+        display: none;
+    }
+}
