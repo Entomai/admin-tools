@@ -2,8 +2,13 @@
     function moveHeaderLeft() {
         const headerLeft = document.querySelector('[data-entomai-header-left]')
         const brand = document.querySelector('header.navbar .navbar-brand')
+        const hasContent = headerLeft?.children.length > 0
 
         if (!headerLeft || !brand || headerLeft.dataset.moved === '1') {
+            return
+        }
+
+        if (!hasContent) {
             return
         }
 
@@ -11,8 +16,23 @@
         headerLeft.classList.remove('d-none')
         headerLeft.classList.add('d-flex', 'align-items-center', 'gap-2', 'me-3')
 
-        brand.closest('header.navbar')?.classList.add('entomai-header-left-navbar')
+        if (headerLeft.dataset.entomaiCompactBrand === '1') {
+            brand.closest('header.navbar')?.classList.add('entomai-header-left-navbar')
+        }
+
         brand.insertAdjacentElement('afterend', headerLeft)
+    }
+
+    function setupStickyAdminShell() {
+        const headerLeft = document.querySelector('[data-entomai-header-left]')
+        const header = document.querySelector('#app > header.navbar')
+        const sidebar = document.querySelector('#sidebar-menu-main')
+
+        if (!headerLeft || headerLeft.dataset.entomaiStickyShell !== '1' || !header || !sidebar) {
+            return
+        }
+
+        document.body.classList.add('entomai-admin-sticky-shell')
     }
 
     function bindSubMenus() {
@@ -44,6 +64,27 @@
                 submenu.classList.toggle('show')
                 toggle.setAttribute('aria-expanded', submenu.classList.contains('show') ? 'true' : 'false')
             })
+        })
+    }
+
+    function hideViewWebsiteButton() {
+        const headerLeft = document.querySelector('[data-entomai-header-left]')
+        const header = document.querySelector('header.navbar')
+
+        if (!headerLeft || headerLeft.dataset.entomaiHideViewWebsite !== '1' || !header) {
+            return
+        }
+
+        header.querySelectorAll('a[href][target="_blank"]').forEach((link) => {
+            const text = link.textContent.trim().toLowerCase()
+
+            if (!link.querySelector('.icon-tabler-world') && !text.includes('view website')) {
+                return
+            }
+
+            const wrapper = link.closest('.nav-item') || link.closest('.d-flex.align-items-center') || link
+
+            wrapper.classList.add('d-none')
         })
     }
 
@@ -92,9 +133,11 @@
     }
 
     function boot() {
+        setupStickyAdminShell()
         moveHeaderLeft()
         bindSubMenus()
         hideLegacyPluginNotifications()
+        hideViewWebsiteButton()
         document.addEventListener('click', closeSubMenus)
     }
 

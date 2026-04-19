@@ -136,6 +136,22 @@ header.navbar.entomai-header-left-navbar.navbar-expand-md .navbar-brand {
     padding-top: 0.75rem;
 }
 
+.entomai-header-updates__list {
+    max-height: 22rem;
+    overflow: auto;
+}
+
+.entomai-header-updates__item {
+    cursor: pointer;
+    padding-bottom: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+.entomai-header-updates__footer {
+    border-top: 1px solid var(--tblr-border-color);
+    padding: 0.75rem;
+}
+
 .entomai-header-notification__empty {
     align-items: center;
     color: var(--tblr-secondary);
@@ -177,5 +193,73 @@ header.navbar.entomai-header-left-navbar.navbar-expand-md .navbar-brand {
 @media (max-width: 575.98px) {
     .entomai-header-left .nav-link-title {
         display: none;
+    }
+}
+
+@media (min-width: 992px) {
+    body.entomai-admin-sticky-shell {
+        overflow: hidden;
+    }
+
+    body.entomai-admin-sticky-shell #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        min-height: 100vh;
+        overflow: visible;
+    }
+
+    body.entomai-admin-sticky-shell #app > header.navbar {
+        flex: 0 0 auto;
+        overflow: visible;
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+    }
+
+    body.entomai-admin-sticky-shell #app > header.navbar .dropdown-menu {
+        z-index: 1050;
+    }
+
+    body.entomai-admin-sticky-shell #app > .d-lg-flex {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    body.entomai-admin-sticky-shell #sidebar-menu-main {
+        align-self: stretch;
+        flex: 0 0 auto;
+        max-height: 100%;
+        overflow: hidden;
+    }
+
+    body.entomai-admin-sticky-shell #sidebar-menu-main > .container,
+    body.entomai-admin-sticky-shell #sidebar-menu-main > .container-fluid,
+    body.entomai-admin-sticky-shell #sidebar-menu-main > .container-xl,
+    body.entomai-admin-sticky-shell #sidebar-menu-main > .container-xxl {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    body.entomai-admin-sticky-shell #sidebar-menu {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+    }
+
+    body.entomai-admin-sticky-shell .page-wrapper {
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
+        min-width: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
     }
 }

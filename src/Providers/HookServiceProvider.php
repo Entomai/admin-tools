@@ -2,6 +2,7 @@
 
 namespace Botble\AdminTools\Providers;
 
+use Botble\AdminTools\Services\AdminToolsUpdateService;
 use Botble\Base\Facades\Assets;
 use Botble\Base\Facades\BaseHelper;
 use Botble\Base\Supports\ServiceProvider;
@@ -32,7 +33,10 @@ class HookServiceProvider extends ServiceProvider
 
     public function registerEcommerceHeaderMenu(array $menus): array
     {
-        if (! $this->isPluginReady('ecommerce')) {
+        if (
+            ! admin_tools_setting_bool('ecommerce_header_menu_enabled', true)
+            || ! $this->isPluginReady('ecommerce')
+        ) {
             return $menus;
         }
 
@@ -48,7 +52,11 @@ class HookServiceProvider extends ServiceProvider
 
     public function registerEcommerceHeaderMenuItems(array $items, string $menuId, array $menu = []): array
     {
-        if ($menuId !== 'ecommerce-tools' || ! $this->isPluginReady('ecommerce')) {
+        if (
+            $menuId !== 'ecommerce-tools'
+            || ! admin_tools_setting_bool('ecommerce_header_menu_enabled', true)
+            || ! $this->isPluginReady('ecommerce')
+        ) {
             return $items;
         }
 
@@ -86,11 +94,11 @@ class HookServiceProvider extends ServiceProvider
 
     public function registerEcommerceHeaderNotifications(array $notifications): array
     {
-        if ($notification = $this->getEcommerceNotification()) {
+        if (admin_tools_setting_bool('ecommerce_notifications_enabled', true) && ($notification = $this->getEcommerceNotification())) {
             $notifications[] = $notification;
         }
 
-        if ($notification = $this->getPaymentNotification()) {
+        if (admin_tools_setting_bool('payment_notifications_enabled', true) && ($notification = $this->getPaymentNotification())) {
             $notifications[] = $notification;
         }
 
@@ -103,23 +111,37 @@ class HookServiceProvider extends ServiceProvider
             return $html;
         }
 
-        $fastMenuItems = apply_filters(
-            ADMIN_TOOLS_FILTER_FAST_MENU_ITEMS,
-            $this->getDefaultItems()
-        );
+        $settings = $this->getHeaderSettings();
+        $fastMenuItems = [];
 
-        $fastMenuItems = $this->normalizeItems(is_array($fastMenuItems) ? $fastMenuItems : []);
+        if ($settings['fast_menu_enabled']) {
+            $fastMenuItems = apply_filters(
+                ADMIN_TOOLS_FILTER_FAST_MENU_ITEMS,
+                $this->getDefaultItems()
+            );
+
+            $fastMenuItems = $this->normalizeItems(is_array($fastMenuItems) ? $fastMenuItems : []);
+        }
+
         $headerLeftItems = apply_filters(ADMIN_TOOLS_FILTER_HEADER_LEFT_ITEMS, array_merge(
             $this->getHeaderMenuItems(),
-            $this->getHeaderNotificationItems()
+            $this->getHeaderNotificationItems(),
+            $this->getHeaderUpdateItems()
         ));
         $headerLeftItems = $this->normalizeHeaderLeftItems(is_array($headerLeftItems) ? $headerLeftItems : []);
 
-        if ($fastMenuItems === [] && $headerLeftItems === []) {
-            return $html;
-        }
+        return $html.view('plugins/admin-tools::header-left.index', compact('fastMenuItems', 'headerLeftItems', 'settings'))->render();
+    }
 
-        return $html.view('plugins/admin-tools::header-left.index', compact('fastMenuItems', 'headerLeftItems'))->render();
+    protected function getHeaderSettings(): array
+    {
+        return [
+            'fast_menu_enabled' => admin_tools_setting_bool('fast_menu_enabled', true),
+            'update_header_widget_enabled' => admin_tools_setting_bool('update_header_widget_enabled', true),
+            'sticky_header_enabled' => admin_tools_setting_bool('sticky_header_enabled', true),
+            'compact_brand_enabled' => admin_tools_setting_bool('compact_brand_enabled', true),
+            'hide_view_website_button' => admin_tools_setting_bool('hide_view_website_button', false),
+        ];
     }
 
     protected function getDefaultItems(): array
@@ -193,6 +215,12 @@ class HookServiceProvider extends ServiceProvider
                 'ti ti-adjustments',
                 'system.index'
             ),
+            $this->routeItem(
+                'admin-tools.settings',
+                trans('plugins/admin-tools::admin-tools.admin_tools_settings'),
+                'ti ti-bolt',
+                'admin-tools.settings'
+            ),
         ]));
     }
 
@@ -205,11 +233,6 @@ class HookServiceProvider extends ServiceProvider
         }
 
         return compact('id', 'label', 'icon', 'children');
-    }
-
-    protected function getDefaultHeaderLeftItems(): array
-    {
-        return $this->getHeaderNotificationItems();
     }
 
     protected function getHeaderNotificationItems(): array
@@ -249,6 +272,40 @@ class HookServiceProvider extends ServiceProvider
             ],
             $this->normalizeHeaderMenus(is_array($menus) ? $menus : [])
         );
+    }
+
+    protected function getHeaderUpdateItems(): array
+    {
+        if (
+            ! admin_tools_setting_bool('update_header_widget_enabled', true)
+            || ! Route::has('admin-tools.updates.update')
+            || ! $this->userCan('admin-tools.settings')
+        ) {
+            return [];
+        }
+
+        try {
+            $state = app(AdminToolsUpdateService::class)->getState();
+        } catch (Throwable) {
+            return [];
+        }
+
+        $updates = $state['items'] ?? [];
+        $messages = $state['messages'] ?? [];
+
+        if ($updates === [] && $messages === []) {
+            return [];
+        }
+
+        return [
+            [
+                'id' => 'admin-tools-header-updates',
+                'section' => 'update',
+                'priority' => 10,
+                'view' => 'plugins/admin-tools::header-left.updates',
+                'data' => compact('state', 'updates', 'messages'),
+            ],
+        ];
     }
 
     protected function getEcommerceNotification(): ?array
@@ -312,6 +369,10 @@ class HookServiceProvider extends ServiceProvider
     {
         $contactClass = 'Botble\Contact\Models\Contact';
         $statusClass = 'Botble\Contact\Enums\ContactStatusEnum';
+
+        if (! admin_tools_setting_bool('contact_notifications_enabled', true)) {
+            return null;
+        }
 
         if (! $this->isPluginReady('contact', [$contactClass], ['contacts.index'])) {
             return null;
@@ -756,7 +817,8 @@ class HookServiceProvider extends ServiceProvider
         return match ($section) {
             'menu' => 10,
             'notification' => 20,
-            default => 30,
+            'update' => 30,
+            default => 40,
         };
     }
 

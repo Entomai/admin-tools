@@ -24,13 +24,15 @@
         data-bs-auto-close="outside"
         role="button"
         aria-expanded="false"
-        aria-label="{{ $menuLabel }}"
+        aria-label="{{ $menuLabel ?: $menuId }}"
     >
         @if ($menuIcon)
             <x-core::icon :name="$menuIcon" />
         @endif
 
-        <span class="nav-link-title">{{ $menuLabel }}</span>
+        @if (! blank($menuLabel))
+            <span class="nav-link-title">{{ $menuLabel }}</span>
+        @endif
     </a>
 
     <div
