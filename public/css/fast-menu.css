@@ -152,6 +152,29 @@ header.navbar.entomai-header-left-navbar.navbar-expand-md .navbar-brand {
     padding: 0.75rem;
 }
 
+.entomai-fast-cache-cleaner__menu {
+    width: min(34rem, calc(100vw - 2rem));
+}
+
+.entomai-fast-cache-cleaner__list {
+    max-height: 26rem;
+    overflow: auto;
+}
+
+.entomai-fast-cache-cleaner__item {
+    padding-bottom: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+.entomai-fast-cache-cleaner__item .btn {
+    min-width: 6.25rem;
+}
+
+.entomai-fast-cache-cleaner__footer {
+    border-top: 1px solid var(--tblr-border-color);
+    padding: 0.75rem;
+}
+
 .entomai-header-notification__empty {
     align-items: center;
     color: var(--tblr-secondary);

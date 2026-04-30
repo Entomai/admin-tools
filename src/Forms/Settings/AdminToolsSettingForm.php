@@ -19,6 +19,7 @@ class AdminToolsSettingForm extends SettingForm
             ->setSectionDescription(trans('plugins/admin-tools::admin-tools.settings_description'))
             ->setValidatorClass(AdminToolsSettingRequest::class)
             ->addSwitch('fast_menu_enabled')
+            ->addSwitch('fast_cache_cleaner_enabled')
             ->addSwitch('ecommerce_header_menu_enabled')
             ->addSwitch('ecommerce_notifications_enabled')
             ->addSwitch('contact_notifications_enabled')

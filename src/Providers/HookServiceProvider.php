@@ -2,6 +2,7 @@
 
 namespace Botble\AdminTools\Providers;
 
+use Botble\AdminTools\Services\AdminToolsCacheService;
 use Botble\AdminTools\Services\AdminToolsUpdateService;
 use Botble\Base\Facades\Assets;
 use Botble\Base\Facades\BaseHelper;
@@ -120,11 +121,32 @@ class HookServiceProvider extends ServiceProvider
                 $this->getDefaultItems()
             );
 
+            if (is_array($fastMenuItems)) {
+                $seenIds = [];
+                $fastMenuItems = array_filter($fastMenuItems, function ($item) use (&$seenIds) {
+                    if (! is_array($item)) {
+                        return true;
+                    }
+
+                    $id = $item['id'] ?? null;
+
+                    if ($id) {
+                        if (in_array($id, $seenIds)) {
+                            return false;
+                        }
+                        $seenIds[] = $id;
+                    }
+
+                    return true;
+                });
+            }
+
             $fastMenuItems = $this->normalizeItems(is_array($fastMenuItems) ? $fastMenuItems : []);
         }
 
         $headerLeftItems = apply_filters(ADMIN_TOOLS_FILTER_HEADER_LEFT_ITEMS, array_merge(
             $this->getHeaderMenuItems(),
+            $this->getHeaderCacheCleanerItems(),
             $this->getHeaderNotificationItems(),
             $this->getHeaderUpdateItems()
         ));
@@ -304,6 +326,36 @@ class HookServiceProvider extends ServiceProvider
                 'priority' => 10,
                 'view' => 'plugins/admin-tools::header-left.updates',
                 'data' => compact('state', 'updates', 'messages'),
+            ],
+        ];
+    }
+
+    protected function getHeaderCacheCleanerItems(): array
+    {
+        if (
+            ! admin_tools_setting_bool('fast_cache_cleaner_enabled', true)
+            || ! Route::has('admin-tools.cache.clear')
+            || ! $this->userCan('superuser')
+        ) {
+            return [];
+        }
+
+        try {
+            $cacheService = app(AdminToolsCacheService::class);
+        } catch (Throwable) {
+            return [];
+        }
+
+        return [
+            [
+                'id' => 'admin-tools-fast-cache-cleaner',
+                'section' => 'cache',
+                'priority' => 10,
+                'view' => 'plugins/admin-tools::header-left.cache-cleaner',
+                'data' => [
+                    'commands' => $cacheService->commands(),
+                    'formattedCacheSize' => $cacheService->formattedCacheSize(),
+                ],
             ],
         ];
     }
@@ -816,6 +868,7 @@ class HookServiceProvider extends ServiceProvider
     {
         return match ($section) {
             'menu' => 10,
+            'cache' => 15,
             'notification' => 20,
             'update' => 30,
             default => 40,

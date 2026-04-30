@@ -104,7 +104,6 @@ class AdminToolsUpdateService
 
         foreach ([
             'marketplace_plugins' => fn (): array => $this->checkMarketplacePluginUpdates(),
-            'private_plugins' => fn (): array => $this->checkEntomaiPrivatePluginUpdates(),
             'marketplace_themes' => fn (): array => $this->checkMarketplaceThemeUpdates(),
         ] as $provider => $callback) {
             try {
@@ -179,52 +178,6 @@ class AdminToolsUpdateService
                     'summary' => Arr::get($update, 'summary') ?: Arr::get($update, 'message'),
                     'released_at' => Arr::get($update, 'released_at') ?: Arr::get($update, 'last_updated_at'),
                     'icon' => 'ti ti-plug',
-                    'url' => Route::has('plugins.index') ? route('plugins.index') : null,
-                    'payload' => $update,
-                ];
-            })
-            ->filter()
-            ->values()
-            ->all();
-    }
-
-    protected function checkEntomaiPrivatePluginUpdates(): array
-    {
-        if (! $this->userCan('plugins.index')) {
-            return [];
-        }
-
-        $registryClass = 'Botble\\TranslationPro\\Package\\PrivateUpdater\\PluginUpdateRegistry';
-        $clientClass = 'Botble\\TranslationPro\\Package\\PrivateUpdater\\PluginUpdateClient';
-
-        if (! class_exists($registryClass) || ! class_exists($clientClass)) {
-            return [];
-        }
-
-        $registry = app($registryClass);
-        $client = app($clientClass);
-        $updates = $client->check($registry->plugins());
-
-        return collect(is_array($updates) ? $updates : [])
-            ->map(function (array $update, string $plugin): ?array {
-                if (! ($update['has_update'] ?? false)) {
-                    return null;
-                }
-
-                return [
-                    'key' => sprintf('plugin:entomai-private:%s', $plugin),
-                    'type' => 'plugin',
-                    'source' => 'entomai_private',
-                    'source_label' => trans('plugins/admin-tools::admin-tools.update_source_entomai_private'),
-                    'slug' => $plugin,
-                    'product_id' => (string) ($update['product_id'] ?? ''),
-                    'update_id' => (string) ($update['update_id'] ?? ''),
-                    'name' => (string) ($update['name'] ?? Str::headline($plugin)),
-                    'current_version' => (string) ($update['current_version'] ?? ''),
-                    'latest_version' => (string) ($update['version'] ?? $update['latest_version'] ?? ''),
-                    'summary' => $update['summary'] ?? $update['message'] ?? null,
-                    'released_at' => $update['released_at'] ?? null,
-                    'icon' => 'ti ti-lock-open',
                     'url' => Route::has('plugins.index') ? route('plugins.index') : null,
                     'payload' => $update,
                 ];
@@ -318,7 +271,6 @@ class AdminToolsUpdateService
 
         return match ($item['source']) {
             'botble_marketplace' => $this->installMarketplacePluginUpdate($item),
-            'entomai_private' => $this->installEntomaiPrivatePluginUpdate($item),
             'botble_marketplace_theme' => $this->installMarketplaceThemeUpdate($item),
             default => throw new RuntimeException(trans('plugins/admin-tools::admin-tools.update_source_not_supported')),
         };
@@ -338,43 +290,6 @@ class AdminToolsUpdateService
         }
 
         $response = app(MarketplaceController::class)->update($updateId, $plugin);
-        $data = $response->getData(true);
-
-        if ($data['error'] ?? false) {
-            throw new RuntimeException($data['message'] ?? trans('plugins/admin-tools::admin-tools.update_failed'));
-        }
-
-        return $data['message'] ?? null;
-    }
-
-    protected function installEntomaiPrivatePluginUpdate(array $item): ?string
-    {
-        if (! $this->userCan('plugins.index')) {
-            throw new RuntimeException(trans('plugins/admin-tools::admin-tools.update_permission_denied'));
-        }
-
-        $registryClass = 'Botble\\TranslationPro\\Package\\PrivateUpdater\\PluginUpdateRegistry';
-        $installerClass = 'Botble\\TranslationPro\\Package\\PrivateUpdater\\PluginUpdateInstaller';
-        $clientClass = 'Botble\\TranslationPro\\Package\\PrivateUpdater\\PluginUpdateClient';
-
-        if (! class_exists($registryClass) || ! class_exists($installerClass) || ! class_exists($clientClass)) {
-            throw new RuntimeException(trans('plugins/admin-tools::admin-tools.update_source_not_available'));
-        }
-
-        $plugin = (string) ($item['slug'] ?? '');
-        $registry = app($registryClass);
-        $pluginData = $registry->find($plugin);
-
-        if (! $pluginData) {
-            throw new RuntimeException(trans('plugins/admin-tools::admin-tools.update_item_unavailable', ['item' => $plugin]));
-        }
-
-        $response = app($installerClass)->install($pluginData, [
-            'version' => $item['latest_version'] ?? null,
-            'latest_version' => $item['latest_version'] ?? null,
-            'update_id' => $item['update_id'] ?? null,
-        ], $this->pluginService);
-
         $data = $response->getData(true);
 
         if ($data['error'] ?? false) {

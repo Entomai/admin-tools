@@ -10,6 +10,7 @@ class AdminToolsSettingRequest extends Request
     {
         return [
             'admin_tools_fast_menu_enabled' => ['nullable', 'boolean'],
+            'admin_tools_fast_cache_cleaner_enabled' => ['nullable', 'boolean'],
             'admin_tools_ecommerce_header_menu_enabled' => ['nullable', 'boolean'],
             'admin_tools_ecommerce_notifications_enabled' => ['nullable', 'boolean'],
             'admin_tools_contact_notifications_enabled' => ['nullable', 'boolean'],

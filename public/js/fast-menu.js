@@ -132,10 +132,76 @@
         })
     }
 
+    function bindCacheCleaner() {
+        document.querySelectorAll('[data-entomai-cache-action]').forEach((button) => {
+            if (button.dataset.bound === '1') {
+                return
+            }
+
+            button.dataset.bound = '1'
+            button.addEventListener('click', function (event) {
+                event.preventDefault()
+                event.stopPropagation()
+
+                const url = button.dataset.url
+                const type = button.dataset.type
+
+                if (!url || !type || !window.$httpClient) {
+                    return
+                }
+
+                const buttonElement = window.jQuery ? window.jQuery(button) : button
+
+                if (window.Botble?.showButtonLoading && window.jQuery) {
+                    window.Botble.showButtonLoading(buttonElement)
+                }
+
+                button.disabled = true
+
+                window.$httpClient
+                    .make()
+                    .post(url, { type })
+                    .then((response) => {
+                        const data = response.data || {}
+                        const message = data.message
+                        const formattedCacheSize = data.data?.formatted_cache_size
+
+                        if (message && window.Botble?.showSuccess) {
+                            window.Botble.showSuccess(message)
+                        }
+
+                        if (formattedCacheSize) {
+                            document.querySelectorAll('[data-entomai-cache-size]').forEach((element) => {
+                                element.textContent = formattedCacheSize
+                            })
+                        }
+                    })
+                    .catch((error) => {
+                        const message =
+                            error?.response?.data?.message ||
+                            error?.message ||
+                            'The cache could not be cleared.'
+
+                        if (window.Botble?.showError) {
+                            window.Botble.showError(message)
+                        }
+                    })
+                    .finally(() => {
+                        if (window.Botble?.hideButtonLoading && window.jQuery) {
+                            window.Botble.hideButtonLoading(buttonElement)
+                        }
+
+                        button.disabled = false
+                    })
+            })
+        })
+    }
+
     function boot() {
         setupStickyAdminShell()
         moveHeaderLeft()
         bindSubMenus()
+        bindCacheCleaner()
         hideLegacyPluginNotifications()
         hideViewWebsiteButton()
         document.addEventListener('click', closeSubMenus)

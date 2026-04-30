@@ -2,6 +2,7 @@
 
 return [
     'fast_menu_enabled' => true,
+    'fast_cache_cleaner_enabled' => true,
     'ecommerce_header_menu_enabled' => true,
     'ecommerce_notifications_enabled' => true,
     'contact_notifications_enabled' => true,

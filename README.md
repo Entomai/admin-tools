@@ -13,6 +13,7 @@ It adds a WordPress-style Fast menu, plugin-ready header menus, compact notifica
 - Header update widget for selecting plugin and theme updates without opening Installed Plugins.
 - Sticky admin header with independent sidebar/content scrolling.
 - Admin Tools Settings for enabling or disabling Fast menu, integrations, notifications, sticky header, compact brand width, update widget, and the default View website button.
+- Automatic cache busting for Admin Tools CSS and JavaScript assets after updates.
 - Extension hooks so other plugins can add Fast menu items, custom header menus, notifications, raw header content, or update providers.
 
 ## Built-In Integrations

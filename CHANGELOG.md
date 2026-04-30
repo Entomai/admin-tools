@@ -33,6 +33,7 @@ All notable changes to Admin Tools will be documented in this file.
 
 ### Fixed
 
+- Added content-hash cache busting for Admin Tools CSS and JavaScript assets so updates take effect without requiring users to clear browser cache.
 - Prevented Admin Tools integrations from loading when related plugins, classes, routes, or permissions are unavailable.
 - Prevented empty menu labels from rendering extra spacing in header menus.
 - Avoided duplicate legacy plugin notifications when Admin Tools notifications are active.
