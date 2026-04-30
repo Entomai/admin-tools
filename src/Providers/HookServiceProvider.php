@@ -22,8 +22,10 @@ class HookServiceProvider extends ServiceProvider
         }
 
         $this->app['events']->listen(RouteMatched::class, function (): void {
-            Assets::addStylesDirectly('vendor/core/plugins/admin-tools/css/fast-menu.css')
-                ->addScriptsDirectly('vendor/core/plugins/admin-tools/js/fast-menu.js');
+            $assetVersion = @filemtime(__DIR__.'/../../public/js/fast-menu.js') ?: get_cms_version();
+
+            Assets::addStylesDirectly('vendor/core/plugins/admin-tools/css/fast-menu.css?v='.$assetVersion)
+                ->addScriptsDirectly('vendor/core/plugins/admin-tools/js/fast-menu.js?v='.$assetVersion);
 
             add_filter(ADMIN_TOOLS_FILTER_HEADER_MENUS, [$this, 'registerEcommerceHeaderMenu']);
             add_filter(ADMIN_TOOLS_FILTER_HEADER_MENU_ITEMS, [$this, 'registerEcommerceHeaderMenuItems'], 20, 3);

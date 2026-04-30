@@ -133,68 +133,110 @@
     }
 
     function bindCacheCleaner() {
-        document.querySelectorAll('[data-entomai-cache-action]').forEach((button) => {
-            if (button.dataset.bound === '1') {
+        if (document.documentElement.dataset.entomaiCacheCleanerBound === '1') {
+            return
+        }
+
+        document.documentElement.dataset.entomaiCacheCleanerBound = '1'
+
+        document.addEventListener('click', function (event) {
+            const button = event.target.closest('[data-entomai-cache-action]')
+
+            if (!button) {
                 return
             }
 
-            button.dataset.bound = '1'
-            button.addEventListener('click', function (event) {
-                event.preventDefault()
-                event.stopPropagation()
+            event.preventDefault()
+            event.stopPropagation()
 
-                const url = button.dataset.url
-                const type = button.dataset.type
+            if (button.disabled) {
+                return
+            }
 
-                if (!url || !type || !window.$httpClient) {
-                    return
+            const url = button.dataset.url
+            const type = button.dataset.type
+
+            if (!url || !type) {
+                return
+            }
+
+            const request = makeCacheRequest(url, type)
+
+            if (!request) {
+                if (typeof Botble !== 'undefined' && Botble.showError) {
+                    Botble.showError('The cache request client is not available.')
                 }
 
-                const buttonElement = window.jQuery ? window.jQuery(button) : button
+                return
+            }
 
-                if (window.Botble?.showButtonLoading && window.jQuery) {
-                    window.Botble.showButtonLoading(buttonElement)
-                }
+            const buttonElement = window.jQuery ? window.jQuery(button) : button
 
-                button.disabled = true
+            if (typeof Botble !== 'undefined' && Botble.showButtonLoading && window.jQuery) {
+                Botble.showButtonLoading(buttonElement)
+            }
 
-                window.$httpClient
-                    .make()
-                    .post(url, { type })
-                    .then((response) => {
-                        const data = response.data || {}
-                        const message = data.message
-                        const formattedCacheSize = data.data?.formatted_cache_size
+            button.disabled = true
 
-                        if (message && window.Botble?.showSuccess) {
-                            window.Botble.showSuccess(message)
-                        }
+            request
+                .then((response) => {
+                    const data = response.data || response || {}
+                    const message = data.message
+                    const formattedCacheSize = data.data?.formatted_cache_size
 
-                        if (formattedCacheSize) {
-                            document.querySelectorAll('[data-entomai-cache-size]').forEach((element) => {
-                                element.textContent = formattedCacheSize
-                            })
-                        }
-                    })
-                    .catch((error) => {
-                        const message =
-                            error?.response?.data?.message ||
-                            error?.message ||
-                            'The cache could not be cleared.'
+                    if (message && typeof Botble !== 'undefined' && Botble.showSuccess) {
+                        Botble.showSuccess(message)
+                    }
 
-                        if (window.Botble?.showError) {
-                            window.Botble.showError(message)
-                        }
-                    })
-                    .finally(() => {
-                        if (window.Botble?.hideButtonLoading && window.jQuery) {
-                            window.Botble.hideButtonLoading(buttonElement)
-                        }
+                    if (formattedCacheSize) {
+                        document.querySelectorAll('[data-entomai-cache-size]').forEach((element) => {
+                            element.textContent = formattedCacheSize
+                        })
+                    }
+                })
+                .catch((error) => {
+                    const message =
+                        error?.responseJSON?.message ||
+                        error?.response?.data?.message ||
+                        error?.message ||
+                        'The cache could not be cleared.'
 
-                        button.disabled = false
-                    })
-            })
+                    if (typeof Botble !== 'undefined' && Botble.showError) {
+                        Botble.showError(message)
+                    }
+                })
+                .finally(() => {
+                    if (typeof Botble !== 'undefined' && Botble.hideButtonLoading && window.jQuery) {
+                        Botble.hideButtonLoading(buttonElement)
+                    }
+
+                    button.disabled = false
+                })
         })
+    }
+
+    function makeCacheRequest(url, type) {
+        if (typeof $httpClient !== 'undefined') {
+            return $httpClient.make().post(url, { type })
+        }
+
+        if (window.jQuery) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+
+            return new Promise((resolve, reject) => {
+                window.jQuery
+                    .ajax({
+                        method: 'POST',
+                        url,
+                        data: { type },
+                        headers: csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {},
+                    })
+                    .done(resolve)
+                    .fail(reject)
+            })
+        }
+
+        return null
     }
 
     function boot() {
