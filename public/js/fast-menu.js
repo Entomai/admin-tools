@@ -8,6 +8,14 @@
             return
         }
 
+        if (headerLeft.dataset.entomaiCompactBrand === '1') {
+            brand.closest('header.navbar')?.classList.add('entomai-header-left-navbar')
+        }
+
+        if (headerLeft.dataset.entomaiHeaderInline === '1') {
+            return
+        }
+
         if (!hasContent) {
             return
         }
@@ -15,10 +23,6 @@
         headerLeft.dataset.moved = '1'
         headerLeft.classList.remove('d-none')
         headerLeft.classList.add('d-flex', 'align-items-center', 'gap-2', 'me-3')
-
-        if (headerLeft.dataset.entomaiCompactBrand === '1') {
-            brand.closest('header.navbar')?.classList.add('entomai-header-left-navbar')
-        }
 
         brand.insertAdjacentElement('afterend', headerLeft)
     }
@@ -67,27 +71,6 @@
         })
     }
 
-    function hideViewWebsiteButton() {
-        const headerLeft = document.querySelector('[data-entomai-header-left]')
-        const header = document.querySelector('header.navbar')
-
-        if (!headerLeft || headerLeft.dataset.entomaiHideViewWebsite !== '1' || !header) {
-            return
-        }
-
-        header.querySelectorAll('a[href][target="_blank"]').forEach((link) => {
-            const text = link.textContent.trim().toLowerCase()
-
-            if (!link.querySelector('.icon-tabler-world') && !text.includes('view website')) {
-                return
-            }
-
-            const wrapper = link.closest('.nav-item') || link.closest('.d-flex.align-items-center') || link
-
-            wrapper.classList.add('d-none')
-        })
-    }
-
     function closeSubMenus(event) {
         if (event.target.closest('[data-entomai-header-left]')) {
             return
@@ -96,39 +79,6 @@
         document.querySelectorAll('[data-entomai-header-left] .dropdown-menu.show').forEach((menu) => {
             menu.classList.remove('show')
             menu.previousElementSibling?.setAttribute('aria-expanded', 'false')
-        })
-    }
-
-    function hideLegacyPluginNotifications() {
-        const header = document.querySelector('header.navbar')
-
-        if (!header) {
-            return
-        }
-
-        const notifications = [
-            {
-                current: '[data-entomai-notification="ecommerce"]',
-                legacyIcon: '.icon-tabler-shopping-cart',
-            },
-            {
-                current: '[data-entomai-notification="contact"]',
-                legacyIcon: '.icon-tabler-mail',
-            },
-        ]
-
-        notifications.forEach((notification) => {
-            if (!document.querySelector(notification.current)) {
-                return
-            }
-
-            header.querySelectorAll('.nav-item.dropdown').forEach((item) => {
-                if (item.closest('[data-entomai-header-left]') || !item.querySelector(notification.legacyIcon)) {
-                    return
-                }
-
-                item.classList.add('d-none')
-            })
         })
     }
 
@@ -244,8 +194,6 @@
         moveHeaderLeft()
         bindSubMenus()
         bindCacheCleaner()
-        hideLegacyPluginNotifications()
-        hideViewWebsiteButton()
         document.addEventListener('click', closeSubMenus)
     }
 

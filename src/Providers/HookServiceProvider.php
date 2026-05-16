@@ -7,10 +7,14 @@ use Botble\AdminTools\Services\AdminToolsUpdateService;
 use Botble\Base\Facades\Assets;
 use Botble\Base\Facades\BaseHelper;
 use Botble\Base\Supports\ServiceProvider;
+use Botble\Setting\Facades\Setting;
+use DOMDocument;
+use DOMElement;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Throwable;
 
 class HookServiceProvider extends ServiceProvider
@@ -22,6 +26,8 @@ class HookServiceProvider extends ServiceProvider
         }
 
         $this->app['events']->listen(RouteMatched::class, function (): void {
+            $this->registerHeaderViewOverrides();
+
             $assetVersion = @filemtime(__DIR__.'/../../public/js/fast-menu.js') ?: get_cms_version();
 
             Assets::addStylesDirectly('vendor/core/plugins/admin-tools/css/fast-menu.css?v='.$assetVersion)
@@ -31,7 +37,19 @@ class HookServiceProvider extends ServiceProvider
             add_filter(ADMIN_TOOLS_FILTER_HEADER_MENU_ITEMS, [$this, 'registerEcommerceHeaderMenuItems'], 20, 3);
             add_filter(ADMIN_TOOLS_FILTER_HEADER_NOTIFICATIONS, [$this, 'registerEcommerceHeaderNotifications']);
             add_filter(BASE_FILTER_TOP_HEADER_LAYOUT, [$this, 'renderHeaderLeft'], 90);
+            add_filter(BASE_FILTER_TOP_HEADER_LAYOUT, [$this, 'filterTopHeaderLayout'], 1000);
+            add_filter(BASE_FILTER_HEAD_LAYOUT_TEMPLATE, [$this, 'renderAdminAppearanceHead'], 40);
+            add_filter(BASE_FILTER_HEADER_LAYOUT_TEMPLATE, [$this, 'renderAdminAppearanceBodyScript'], 1);
         });
+    }
+
+    protected function registerHeaderViewOverrides(): void
+    {
+        $path = __DIR__.'/../../resources/views/vendor/core/base';
+
+        if (is_dir($path)) {
+            view()->prependNamespace('core/base', $path);
+        }
     }
 
     public function registerEcommerceHeaderMenu(array $menus): array
@@ -154,7 +172,306 @@ class HookServiceProvider extends ServiceProvider
         ));
         $headerLeftItems = $this->normalizeHeaderLeftItems(is_array($headerLeftItems) ? $headerLeftItems : []);
 
+        if ($fastMenuItems === [] && $headerLeftItems === []) {
+            return $html;
+        }
+
         return $html.view('plugins/admin-tools::header-left.index', compact('fastMenuItems', 'headerLeftItems', 'settings'))->render();
+    }
+
+    public function filterTopHeaderLayout(?string $html): ?string
+    {
+        if (! is_string($html) || trim($html) === '') {
+            return $html;
+        }
+
+        $fragments = $this->splitTopHeaderFragments($html);
+
+        if ($fragments === []) {
+            return $html;
+        }
+
+        $hiddenItems = $this->hiddenHeaderHookItemIds();
+        $hideBotbleNotification = admin_tools_setting_bool('hide_botble_notification', false);
+        $catalogItems = [];
+        $filteredFragments = [];
+
+        foreach ($fragments as $fragment) {
+            $fragmentHtml = $fragment['html'];
+            $descriptor = $this->describeTopHeaderFragment($fragmentHtml, $fragment['element']);
+
+            if ($descriptor) {
+                $id = $descriptor['id'];
+
+                if (! $this->shouldSkipFromHeaderHookCatalog($id)) {
+                    $catalogItems[$id] = ['label' => $descriptor['label']];
+                }
+
+                if (
+                    ($id === 'botble-admin-notification' && $hideBotbleNotification)
+                    || in_array($id, $hiddenItems, true)
+                ) {
+                    continue;
+                }
+            }
+
+            $filteredFragments[] = $fragmentHtml;
+        }
+
+        $this->rememberHeaderHookItems($catalogItems);
+
+        return implode('', $filteredFragments);
+    }
+
+    public function renderAdminAppearanceHead(?string $html): string
+    {
+        return admin_tools_render_admin_appearance_head($html);
+    }
+
+    public function renderAdminAppearanceBodyScript(?string $html): string
+    {
+        return admin_tools_render_admin_appearance_body_script($html);
+    }
+
+    protected function splitTopHeaderFragments(string $html): array
+    {
+        if (! class_exists(DOMDocument::class)) {
+            return [['html' => $html, 'element' => null]];
+        }
+
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        $loaded = $document->loadHTML(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div id="admin-tools-top-header-fragments">'.$html.'</div></body></html>'
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if (! $loaded || ! ($wrapper = $document->getElementById('admin-tools-top-header-fragments'))) {
+            return [['html' => $html, 'element' => null]];
+        }
+
+        $fragments = [];
+
+        foreach ($wrapper->childNodes as $node) {
+            $fragmentHtml = $document->saveHTML($node);
+
+            if (! is_string($fragmentHtml) || trim($fragmentHtml) === '') {
+                continue;
+            }
+
+            $fragments[] = [
+                'html' => $fragmentHtml,
+                'element' => $node instanceof DOMElement ? $node : null,
+            ];
+        }
+
+        return $fragments;
+    }
+
+    protected function describeTopHeaderFragment(string $html, ?DOMElement $element = null): ?array
+    {
+        if (str_contains($html, 'data-entomai-header-left')) {
+            return [
+                'id' => 'admin-tools-header-left',
+                'label' => trans('plugins/admin-tools::admin-tools.admin_tools_settings'),
+            ];
+        }
+
+        if ($this->isBotbleNotificationFragment($html)) {
+            return [
+                'id' => 'botble-admin-notification',
+                'label' => trans('plugins/admin-tools::admin-tools.header_hook_item_botble_notification'),
+            ];
+        }
+
+        if ($this->isHotelBookingNotificationFragment($html)) {
+            return [
+                'id' => 'hotel-booking-notification',
+                'label' => trans('plugins/admin-tools::admin-tools.header_hook_item_hotel_booking_notification'),
+            ];
+        }
+
+        $id = $this->getHeaderFragmentId($html, $element);
+        $label = $this->getHeaderFragmentLabel($html, $element);
+
+        return [
+            'id' => $id,
+            'label' => $label ?: trans('plugins/admin-tools::admin-tools.header_hook_item_unknown', ['id' => Str::after($id, 'rendered-')]),
+        ];
+    }
+
+    protected function isBotbleNotificationFragment(string $html): bool
+    {
+        return str_contains($html, 'notification-sidebar')
+            || (str_contains($html, 'notification-count') && str_contains($html, 'icon-tabler-bell'));
+    }
+
+    protected function isHotelBookingNotificationFragment(string $html): bool
+    {
+        try {
+            if (Route::has('booking.index') && str_contains($html, route('booking.index'))) {
+                return true;
+            }
+        } catch (Throwable) {
+            return false;
+        }
+
+        return str_contains($html, 'icon-tabler-mail') && str_contains(Str::lower($html), 'booking');
+    }
+
+    protected function getHeaderFragmentId(string $html, ?DOMElement $element = null): string
+    {
+        if ($element instanceof DOMElement && $element->hasAttribute('id')) {
+            return $this->normalizeHtmlId('dom-'.$element->getAttribute('id'));
+        }
+
+        preg_match('/icon-tabler-([a-z0-9-]+)/i', $html, $iconMatch);
+        preg_match('/href=(["\'])(.*?)\1/i', $html, $hrefMatch);
+
+        $href = $hrefMatch[2] ?? null;
+
+        if ($href) {
+            $href = parse_url(html_entity_decode($href, ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_PATH) ?: $href;
+        }
+
+        $signature = implode('|', array_filter([
+            $element instanceof DOMElement ? $element->tagName : null,
+            $element instanceof DOMElement ? $element->getAttribute('class') : null,
+            $iconMatch[1] ?? null,
+            $href,
+        ]));
+
+        if ($signature === '') {
+            $signature = preg_replace('/\s+/', ' ', trim(strip_tags($html))) ?: $html;
+        }
+
+        return 'rendered-'.substr(sha1($signature), 0, 16);
+    }
+
+    protected function getHeaderFragmentLabel(string $html, ?DOMElement $element = null): ?string
+    {
+        foreach (['aria-label', 'title'] as $attribute) {
+            if ($element instanceof DOMElement && $element->hasAttribute($attribute)) {
+                return trim($element->getAttribute($attribute));
+            }
+        }
+
+        $text = trim(preg_replace(
+            '/\s+/',
+            ' ',
+            html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8')
+        ) ?: '');
+
+        if ($text === '' || is_numeric($text)) {
+            return null;
+        }
+
+        return Str::limit($text, 80, '');
+    }
+
+    protected function filterHiddenHeaderNotifications(array $notifications): array
+    {
+        $hiddenItems = $this->hiddenHeaderHookItemIds();
+
+        if ($hiddenItems === []) {
+            return $notifications;
+        }
+
+        return array_values(array_filter($notifications, function (mixed $notification) use ($hiddenItems): bool {
+            if (! is_array($notification)) {
+                return true;
+            }
+
+            $id = $this->getHeaderNotificationId($notification);
+
+            return ! $id || ! in_array($id, $hiddenItems, true);
+        }));
+    }
+
+    protected function rememberHeaderHookItemsFromNotifications(array $notifications): void
+    {
+        $items = [];
+
+        foreach ($notifications as $notification) {
+            if (! is_array($notification) || ! ($id = $this->getHeaderNotificationId($notification))) {
+                continue;
+            }
+
+            if ($this->shouldSkipFromHeaderHookCatalog($id)) {
+                continue;
+            }
+
+            $label = $notification['title'] ?? $notification['label'] ?? $notification['name'] ?? $id;
+            $description = $notification['description'] ?? $notification['subtitle'] ?? null;
+
+            if (! is_string($label)) {
+                $label = $id;
+            }
+
+            if (is_string($description) && $description !== '') {
+                $label = trim($label.' - '.$description);
+            }
+
+            $items[$id] = ['label' => Str::limit($label, 100, '')];
+        }
+
+        $this->rememberHeaderHookItems($items);
+    }
+
+    protected function rememberHeaderHookItems(array $items): void
+    {
+        if ($items === []) {
+            return;
+        }
+
+        $catalog = admin_tools_setting_array('header_hook_item_catalog');
+        $changed = false;
+
+        foreach ($items as $id => $item) {
+            if (! is_string($id) || $id === '' || isset($catalog[$id])) {
+                continue;
+            }
+
+            $catalog[$id] = $item;
+            $changed = true;
+        }
+
+        if (! $changed) {
+            return;
+        }
+
+        try {
+            Setting::set('admin_tools_header_hook_item_catalog', json_encode($catalog))->save();
+        } catch (Throwable) {
+            // Do not let discovery metadata break the admin header.
+        }
+    }
+
+    protected function hiddenHeaderHookItemIds(): array
+    {
+        return array_values(array_filter(array_map(
+            fn (mixed $id): ?string => is_string($id) && $id !== '' ? $this->normalizeHtmlId($id) : null,
+            admin_tools_setting_array('hidden_header_hook_items')
+        )));
+    }
+
+    protected function getHeaderNotificationId(array $notification): ?string
+    {
+        $id = $notification['id'] ?? $notification['type'] ?? null;
+
+        return is_string($id) && $id !== '' ? $this->normalizeHtmlId($id) : null;
+    }
+
+    protected function shouldSkipFromHeaderHookCatalog(string $id): bool
+    {
+        return in_array($id, [
+            'admin-tools-header-left',
+            'botble-admin-notification',
+            'admin-tools-contact-notification',
+            'admin-tools-ecommerce-notification',
+            'admin-tools-payment-notification',
+        ], true);
     }
 
     protected function getHeaderSettings(): array
@@ -165,6 +482,8 @@ class HookServiceProvider extends ServiceProvider
             'sticky_header_enabled' => admin_tools_setting_bool('sticky_header_enabled', true),
             'compact_brand_enabled' => admin_tools_setting_bool('compact_brand_enabled', true),
             'hide_view_website_button' => admin_tools_setting_bool('hide_view_website_button', false),
+            'hide_global_search' => admin_tools_setting_bool('hide_global_search', false),
+            'hide_botble_notification' => admin_tools_setting_bool('hide_botble_notification', false),
         ];
     }
 
@@ -265,10 +584,13 @@ class HookServiceProvider extends ServiceProvider
             ADMIN_TOOLS_FILTER_HEADER_NOTIFICATIONS,
             $this->getDefaultHeaderNotifications()
         );
+        $notifications = is_array($notifications) ? $notifications : [];
+
+        $this->rememberHeaderHookItemsFromNotifications($notifications);
 
         return array_map(
             fn (array $notification): array => $this->notificationItem($notification),
-            $this->normalizeHeaderNotifications(is_array($notifications) ? $notifications : [])
+            $this->normalizeHeaderNotifications($this->filterHiddenHeaderNotifications($notifications))
         );
     }
 

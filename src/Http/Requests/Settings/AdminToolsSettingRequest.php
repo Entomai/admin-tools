@@ -19,6 +19,11 @@ class AdminToolsSettingRequest extends Request
             'admin_tools_sticky_header_enabled' => ['nullable', 'boolean'],
             'admin_tools_compact_brand_enabled' => ['nullable', 'boolean'],
             'admin_tools_hide_view_website_button' => ['nullable', 'boolean'],
+            'admin_tools_hide_global_search' => ['nullable', 'boolean'],
+            'admin_tools_hide_botble_notification' => ['nullable', 'boolean'],
+            'admin_tools_admin_appearance_per_user_enabled' => ['nullable', 'boolean'],
+            'admin_tools_hidden_header_hook_items' => ['nullable', 'array'],
+            'admin_tools_hidden_header_hook_items.*' => ['string', 'max:160'],
         ];
     }
 }

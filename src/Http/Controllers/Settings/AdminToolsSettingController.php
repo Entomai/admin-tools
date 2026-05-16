@@ -29,7 +29,10 @@ class AdminToolsSettingController extends SettingController
 
     public function update(AdminToolsSettingRequest $request): BaseHttpResponse
     {
-        return $this->performUpdate($request->validated());
+        $data = $request->validated();
+        $data['admin_tools_hidden_header_hook_items'] = $request->input('admin_tools_hidden_header_hook_items', []);
+
+        return $this->performUpdate($data);
     }
 
     public function updateSelected(Request $request, AdminToolsUpdateService $updateService): RedirectResponse

@@ -1,5 +1,6 @@
 <?php
 
+use Botble\AdminTools\Http\Controllers\AdminAppearancePreferenceController;
 use Botble\AdminTools\Http\Controllers\AdminToolsCacheController;
 use Botble\AdminTools\Http\Controllers\Settings\AdminToolsSettingController;
 use Botble\Base\Facades\AdminHelper;
@@ -23,6 +24,13 @@ AdminHelper::registerRoutes(function (): void {
         Route::post('cache/clear', [AdminToolsCacheController::class, 'clear'])
             ->name('cache.clear')
             ->permission('superuser')
+            ->middleware('preventDemo');
+
+        Route::get('admin-area-settings', [AdminAppearancePreferenceController::class, 'edit'])
+            ->name('admin-appearance.edit');
+
+        Route::put('admin-area-settings', [AdminAppearancePreferenceController::class, 'update'])
+            ->name('admin-appearance.update')
             ->middleware('preventDemo');
     });
 });

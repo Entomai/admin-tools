@@ -11,4 +11,9 @@ return [
     'sticky_header_enabled' => true,
     'compact_brand_enabled' => true,
     'hide_view_website_button' => false,
+    'hide_global_search' => false,
+    'hide_botble_notification' => false,
+    'admin_appearance_per_user_enabled' => false,
+    'hidden_header_hook_items' => [],
+    'header_hook_item_catalog' => [],
 ];

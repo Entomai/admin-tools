@@ -2,15 +2,25 @@
 
 namespace Botble\AdminTools\Providers;
 
+use Botble\AdminTools\Supports\AdminAppearance as AdminToolsAdminAppearance;
 use Botble\Base\Facades\PanelSectionManager;
 use Botble\Base\PanelSections\PanelSectionItem;
+use Botble\Base\Supports\AdminAppearance as BaseAdminAppearance;
 use Botble\Base\Supports\ServiceProvider;
 use Botble\Base\Traits\LoadAndPublishDataTrait;
 use Botble\Setting\PanelSections\SettingOthersPanelSection;
+use Illuminate\Support\Facades\Facade;
 
 class AdminToolsServiceProvider extends ServiceProvider
 {
     use LoadAndPublishDataTrait;
+
+    public function register(): void
+    {
+        $this->app->singleton(BaseAdminAppearance::class, AdminToolsAdminAppearance::class);
+
+        Facade::clearResolvedInstance(BaseAdminAppearance::class);
+    }
 
     public function boot(): void
     {
