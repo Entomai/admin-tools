@@ -34,6 +34,7 @@ Use:
 - `ADMIN_TOOLS_FILTER_HEADER_MENUS` to declare a new header menu.
 - `ADMIN_TOOLS_FILTER_HEADER_MENU_ITEMS` to add links to an existing header menu by ID.
 - `ADMIN_TOOLS_FILTER_HEADER_NOTIFICATIONS` to add standard notifications.
+- `ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS` to add notification settings to the Admin Tools settings page.
 - `ADMIN_TOOLS_FILTER_HEADER_LEFT_ITEMS` only when custom HTML is required.
 - `ADMIN_TOOLS_FILTER_UPDATE_ITEMS` to add custom update rows to the header update widget.
 - `ADMIN_TOOLS_FILTER_INSTALL_UPDATE_ITEM` to handle installation for custom update rows.

@@ -9,6 +9,9 @@
         do_action(BASE_ACTION_TOP_FORM_CONTENT_NOTIFICATION, request(), $form->getModel());
 
         $exclude ??= [];
+        $customNotificationFields = $form->getFormOption('admin_tools_custom_notification_setting_fields', []);
+        $customNotificationFields = is_array($customNotificationFields) ? $customNotificationFields : [];
+
         $tabs = [
             [
                 'id' => 'admin-tools-settings-shortcuts',
@@ -22,16 +25,21 @@
             [
                 'id' => 'admin-tools-settings-notifications',
                 'label' => trans('plugins/admin-tools::admin-tools.settings_tab_notifications'),
-                'fields' => [
-                    'admin_tools_ecommerce_notifications_enabled',
-                    'admin_tools_ecommerce_notification_statuses[]',
-                    'admin_tools_contact_notifications_enabled',
-                    'admin_tools_contact_notification_statuses[]',
-                    'admin_tools_payment_notifications_enabled',
-                    'admin_tools_payment_notification_statuses[]',
-                    'admin_tools_hotel_booking_notification_statuses[]',
-                    'admin_tools_update_header_widget_enabled',
-                ],
+                'fields' => array_merge(
+                    [
+                        'admin_tools_ecommerce_notifications_enabled',
+                        'admin_tools_ecommerce_notification_statuses[]',
+                        'admin_tools_contact_notifications_enabled',
+                        'admin_tools_contact_notification_statuses[]',
+                        'admin_tools_payment_notifications_enabled',
+                        'admin_tools_payment_notification_statuses[]',
+                        'admin_tools_hotel_booking_notification_statuses[]',
+                    ],
+                    $customNotificationFields,
+                    [
+                        'admin_tools_update_header_widget_enabled',
+                    ]
+                ),
             ],
             [
                 'id' => 'admin-tools-settings-header',

@@ -75,12 +75,22 @@ class AdminToolsSettingController extends SettingController
 
     protected function activePluginArraySettings(): array
     {
-        return array_keys(array_filter([
+        $settings = array_keys(array_filter([
             'ecommerce_notification_statuses' => $this->isPluginActive('ecommerce'),
             'contact_notification_statuses' => $this->isPluginActive('contact'),
             'payment_notification_statuses' => $this->isPluginActive('payment'),
             'hotel_booking_notification_statuses' => $this->isPluginActive('hotel'),
         ]));
+
+        foreach (admin_tools_active_notification_setting_definitions() as $definition) {
+            $key = $definition['status_key'] ?? '';
+
+            if ($key && ($definition['status_choices'] ?? [])) {
+                $settings[] = $key;
+            }
+        }
+
+        return array_values(array_unique($settings));
     }
 
     protected function isPluginActive(string $plugin): bool

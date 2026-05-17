@@ -60,6 +60,7 @@ class AdminToolsSettingForm extends SettingForm
                     ['pending']
                 );
             })
+            ->addCustomNotificationSettings()
             ->addSwitch('update_header_widget_enabled')
             ->addSwitch('sticky_header_enabled')
             ->addSwitch('compact_brand_enabled')
@@ -88,29 +89,97 @@ class AdminToolsSettingForm extends SettingForm
             );
     }
 
+    protected function addCustomNotificationSettings(): static
+    {
+        $fieldNames = [];
+
+        foreach (admin_tools_active_notification_setting_definitions() as $definition) {
+            $enabledKey = $definition['enabled_key'] ?? '';
+            $statusKey = $definition['status_key'] ?? '';
+            $statusChoices = $definition['status_choices'] ?? [];
+
+            if ($enabledKey && ! $this->has("admin_tools_$enabledKey")) {
+                $this->addSwitchField(
+                    $enabledKey,
+                    $definition['enabled_label'],
+                    $definition['enabled_help'],
+                    $definition['enabled_default']
+                );
+
+                $fieldNames[] = "admin_tools_$enabledKey";
+            }
+
+            if ($statusKey && $statusChoices && ! $this->has("admin_tools_{$statusKey}[]")) {
+                $this->addStatusChecklistFromChoices(
+                    $statusKey,
+                    $statusChoices,
+                    $definition['status_default'],
+                    $definition['status_label'],
+                    $definition['status_help']
+                );
+
+                $fieldNames[] = "admin_tools_{$statusKey}[]";
+            }
+        }
+
+        $this->setFormOption('admin_tools_custom_notification_setting_fields', $fieldNames);
+
+        return $this;
+    }
+
     protected function addStatusChecklist(string $key, string $enumClass, array $default): static
     {
-        return $this->add(
-            'admin_tools_'.$key.'[]',
-            MultiCheckListField::class,
-            MultiChecklistFieldOption::make()
-                ->label(trans("plugins/admin-tools::admin-tools.settings_$key"))
-                ->choices($this->statusChoices($enumClass, $default))
-                ->selected(old('admin_tools_'.$key, admin_tools_setting_array($key, $default)))
-                ->helperText(trans("plugins/admin-tools::admin-tools.settings_{$key}_help"))
-                ->inline()
+        return $this->addStatusChecklistFromChoices(
+            $key,
+            $this->statusChoices($enumClass, $default),
+            $default,
+            trans("plugins/admin-tools::admin-tools.settings_$key"),
+            trans("plugins/admin-tools::admin-tools.settings_{$key}_help")
         );
     }
 
     protected function addSwitch(string $key, bool $default = true): static
     {
+        return $this->addSwitchField(
+            $key,
+            trans("plugins/admin-tools::admin-tools.settings_$key"),
+            trans("plugins/admin-tools::admin-tools.settings_{$key}_help"),
+            $default
+        );
+    }
+
+    protected function addSwitchField(string $key, string $label, ?string $helperText, bool $default = true): static
+    {
         return $this->add(
             'admin_tools_'.$key,
             OnOffCheckboxField::class,
-            OnOffFieldOption::make()
-                ->defaultValue(admin_tools_setting_bool($key, $default))
-                ->label(trans("plugins/admin-tools::admin-tools.settings_$key"))
-                ->helperText(trans("plugins/admin-tools::admin-tools.settings_{$key}_help"))
+            tap(
+                OnOffFieldOption::make()
+                    ->defaultValue(admin_tools_setting_bool($key, $default))
+                    ->label($label),
+                fn (OnOffFieldOption $option) => $helperText ? $option->helperText($helperText) : null
+            )
+        );
+    }
+
+    protected function addStatusChecklistFromChoices(
+        string $key,
+        array $choices,
+        array $default,
+        string $label,
+        ?string $helperText
+    ): static {
+        return $this->add(
+            'admin_tools_'.$key.'[]',
+            MultiCheckListField::class,
+            tap(
+                MultiChecklistFieldOption::make()
+                    ->label($label)
+                    ->choices($choices)
+                    ->selected(old('admin_tools_'.$key, admin_tools_setting_array($key, $default)))
+                    ->inline(),
+                fn (MultiChecklistFieldOption $option) => $helperText ? $option->helperText($helperText) : null
+            )
         );
     }
 

@@ -43,3 +43,33 @@ $value = admin_tools_setting('some_future_key', 'default');
 ```
 
 Settings are stored with the `admin_tools_` prefix and fall back to `config/plugins/admin-tools/general.php`.
+
+## Custom Notification Settings
+
+Other plugins can add fields to the Notifications tab with `ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS`.
+
+```php
+add_filter(ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS, function (array $settings): array {
+    $settings['support-pro-tickets'] = [
+        'plugin' => 'support-pro',
+        'enabled_key' => 'support_pro_ticket_notifications_enabled',
+        'enabled_label' => 'Support ticket notifications',
+        'status_key' => 'support_pro_ticket_notification_statuses',
+        'status_label' => 'Ticket statuses',
+        'status_choices' => [
+            'open' => trans('plugins/support-pro::support-pro.ticket.status_open'),
+            'pending' => trans('plugins/support-pro::support-pro.ticket.status_pending'),
+            'resolved' => trans('plugins/support-pro::support-pro.ticket.status_resolved'),
+            'closed' => trans('plugins/support-pro::support-pro.ticket.status_closed'),
+        ],
+        'status_default' => [
+            'open',
+            'pending',
+        ],
+    ];
+
+    return $settings;
+});
+```
+
+The `plugin` value is optional. When present, Admin Tools hides that configuration unless the plugin is active.

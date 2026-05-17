@@ -31,6 +31,10 @@ if (! defined('ADMIN_TOOLS_FILTER_INSTALL_UPDATE_ITEM')) {
     define('ADMIN_TOOLS_FILTER_INSTALL_UPDATE_ITEM', 'admin_tools_filter_install_update_item');
 }
 
+if (! defined('ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS')) {
+    define('ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS', 'admin_tools_filter_notification_setting_definitions');
+}
+
 if (! function_exists('admin_tools_setting')) {
     function admin_tools_setting(string $key, mixed $default = null): mixed
     {
@@ -61,6 +65,188 @@ if (! function_exists('admin_tools_setting_array')) {
         $decoded = json_decode($value, true);
 
         return is_array($decoded) ? $decoded : $default;
+    }
+}
+
+if (! function_exists('admin_tools_notification_setting_definitions')) {
+    function admin_tools_notification_setting_definitions(): array
+    {
+        $definitions = apply_filters(ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS, []);
+
+        if (! is_array($definitions)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($definitions as $id => $definition) {
+            if (! is_array($definition)) {
+                continue;
+            }
+
+            $id = is_string($id) ? $id : ($definition['id'] ?? null);
+
+            if (! is_string($id) || trim($id) === '') {
+                continue;
+            }
+
+            $baseKey = admin_tools_normalize_notification_setting_key($id);
+
+            if ($baseKey === '') {
+                continue;
+            }
+
+            $plugin = $definition['plugin'] ?? null;
+            $plugin = is_string($plugin) && $plugin !== '' ? $plugin : null;
+
+            $enabledKey = admin_tools_normalize_notification_setting_key(
+                $definition['enabled_key'] ?? $definition['enable_key'] ?? "{$baseKey}_notifications_enabled"
+            );
+            $statusKey = admin_tools_normalize_notification_setting_key(
+                $definition['status_key'] ?? $definition['statuses_key'] ?? "{$baseKey}_notification_statuses"
+            );
+            $statusChoices = admin_tools_normalize_notification_status_choices(
+                $definition['status_choices'] ?? $definition['choices'] ?? []
+            );
+            $statusDefault = admin_tools_normalize_notification_status_default(
+                $definition['status_default'] ?? $definition['statuses_default'] ?? array_keys($statusChoices)
+            );
+
+            $enabledDefault = filter_var(
+                $definition['enabled_default'] ?? true,
+                FILTER_VALIDATE_BOOL,
+                FILTER_NULL_ON_FAILURE
+            );
+
+            $normalized[$id] = [
+                'id' => $id,
+                'plugin' => $plugin,
+                'enabled_key' => $enabledKey,
+                'enabled_label' => admin_tools_notification_setting_text(
+                    $definition['enabled_label'] ?? null,
+                    admin_tools_label_from_setting_key($enabledKey)
+                ),
+                'enabled_help' => admin_tools_notification_setting_text(
+                    $definition['enabled_help'] ?? $definition['enabled_helper_text'] ?? null
+                ),
+                'enabled_default' => $enabledDefault ?? true,
+                'status_key' => $statusKey,
+                'status_label' => admin_tools_notification_setting_text(
+                    $definition['status_label'] ?? $definition['statuses_label'] ?? null,
+                    admin_tools_label_from_setting_key($statusKey)
+                ),
+                'status_help' => admin_tools_notification_setting_text(
+                    $definition['status_help'] ?? $definition['statuses_help'] ?? $definition['status_helper_text'] ?? null
+                ),
+                'status_choices' => $statusChoices,
+                'status_default' => $statusDefault,
+            ];
+        }
+
+        return $normalized;
+    }
+}
+
+if (! function_exists('admin_tools_active_notification_setting_definitions')) {
+    function admin_tools_active_notification_setting_definitions(): array
+    {
+        return array_filter(
+            admin_tools_notification_setting_definitions(),
+            function (array $definition): bool {
+                $plugin = $definition['plugin'] ?? null;
+
+                return ! $plugin || (function_exists('is_plugin_active') && is_plugin_active($plugin));
+            }
+        );
+    }
+}
+
+if (! function_exists('admin_tools_normalize_notification_setting_key')) {
+    function admin_tools_normalize_notification_setting_key(mixed $key): string
+    {
+        if (! is_scalar($key)) {
+            return '';
+        }
+
+        $key = strtolower(trim((string) $key));
+
+        if (str_starts_with($key, 'admin_tools_')) {
+            $key = substr($key, strlen('admin_tools_'));
+        }
+
+        return trim((string) preg_replace('/[^a-z0-9_]+/', '_', $key), '_');
+    }
+}
+
+if (! function_exists('admin_tools_normalize_notification_status_choices')) {
+    function admin_tools_normalize_notification_status_choices(mixed $choices): array
+    {
+        if (! is_array($choices)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($choices as $value => $label) {
+            if (is_int($value)) {
+                if (! is_scalar($label)) {
+                    continue;
+                }
+
+                $value = (string) $label;
+            }
+
+            if (! is_scalar($value)) {
+                continue;
+            }
+
+            $value = trim((string) $value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $normalized[$value] = admin_tools_notification_setting_text(
+                $label,
+                admin_tools_label_from_setting_key($value)
+            );
+        }
+
+        return $normalized;
+    }
+}
+
+if (! function_exists('admin_tools_normalize_notification_status_default')) {
+    function admin_tools_normalize_notification_status_default(mixed $default): array
+    {
+        if (! is_array($default)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            fn (mixed $value): ?string => is_scalar($value) ? trim((string) $value) : null,
+            $default
+        ), fn (?string $value): bool => $value !== null && $value !== ''));
+    }
+}
+
+if (! function_exists('admin_tools_notification_setting_text')) {
+    function admin_tools_notification_setting_text(mixed $value, ?string $default = null): ?string
+    {
+        if (! is_scalar($value)) {
+            return $default;
+        }
+
+        $value = trim((string) $value);
+
+        return $value === '' ? $default : $value;
+    }
+}
+
+if (! function_exists('admin_tools_label_from_setting_key')) {
+    function admin_tools_label_from_setting_key(string $key): string
+    {
+        return ucwords(str_replace('_', ' ', $key));
     }
 }
 

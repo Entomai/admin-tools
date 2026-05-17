@@ -8,7 +8,7 @@ class AdminToolsSettingRequest extends Request
 {
     public function rules(): array
     {
-        return [
+        $rules = [
             'admin_tools_fast_menu_enabled' => ['nullable', 'boolean'],
             'admin_tools_fast_cache_cleaner_enabled' => ['nullable', 'boolean'],
             'admin_tools_ecommerce_header_menu_enabled' => ['nullable', 'boolean'],
@@ -35,5 +35,21 @@ class AdminToolsSettingRequest extends Request
             'admin_tools_hidden_header_hook_items' => ['nullable', 'array'],
             'admin_tools_hidden_header_hook_items.*' => ['string', 'max:160'],
         ];
+
+        foreach (admin_tools_active_notification_setting_definitions() as $definition) {
+            $enabledKey = $definition['enabled_key'] ?? '';
+            $statusKey = $definition['status_key'] ?? '';
+
+            if ($enabledKey) {
+                $rules["admin_tools_$enabledKey"] = ['nullable', 'boolean'];
+            }
+
+            if ($statusKey && ($definition['status_choices'] ?? [])) {
+                $rules["admin_tools_$statusKey"] = ['nullable', 'array'];
+                $rules["admin_tools_$statusKey.*"] = ['string', 'max:80'];
+            }
+        }
+
+        return $rules;
     }
 }

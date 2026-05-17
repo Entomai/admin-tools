@@ -44,6 +44,52 @@ add_filter(ADMIN_TOOLS_FILTER_HEADER_NOTIFICATIONS, function (array $notificatio
 });
 ```
 
+## ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS
+
+Adds custom fields to the Admin Tools settings page, inside the Notifications tab.
+
+Use this when a plugin contributes a notification and needs its own enable toggle or selectable statuses.
+
+```php
+add_filter(ADMIN_TOOLS_FILTER_NOTIFICATION_SETTING_DEFINITIONS, function (array $settings): array {
+    $settings['support-pro-tickets'] = [
+        'plugin' => 'support-pro',
+        'enabled_key' => 'support_pro_ticket_notifications_enabled',
+        'enabled_label' => 'Support ticket notifications',
+        'enabled_help' => 'Show ticket notifications in the admin header.',
+        'enabled_default' => true,
+        'status_key' => 'support_pro_ticket_notification_statuses',
+        'status_label' => 'Ticket statuses',
+        'status_help' => 'Only tickets with these statuses are counted.',
+        'status_choices' => [
+            'open' => trans('plugins/support-pro::support-pro.ticket.status_open'),
+            'pending' => trans('plugins/support-pro::support-pro.ticket.status_pending'),
+            'resolved' => trans('plugins/support-pro::support-pro.ticket.status_resolved'),
+            'closed' => trans('plugins/support-pro::support-pro.ticket.status_closed'),
+        ],
+        'status_default' => [
+            'open',
+            'pending',
+        ],
+    ];
+
+    return $settings;
+});
+```
+
+Read the settings from the notification provider:
+
+```php
+if (! admin_tools_setting_bool('support_pro_ticket_notifications_enabled', true)) {
+    return $notifications;
+}
+
+$statuses = admin_tools_setting_array('support_pro_ticket_notification_statuses', [
+    'open',
+    'pending',
+]);
+```
+
 ## ADMIN_TOOLS_FILTER_HEADER_LEFT_ITEMS
 
 Adds custom content to the header-left zone.
