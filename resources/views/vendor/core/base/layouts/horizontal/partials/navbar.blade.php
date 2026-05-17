@@ -1,10 +1,15 @@
 @php
     $adminToolsHideGlobalSearch = function_exists('admin_tools_setting_bool') && admin_tools_setting_bool('hide_global_search', false);
     $adminToolsHideViewWebsite = function_exists('admin_tools_setting_bool') && admin_tools_setting_bool('hide_view_website_button', false);
+    $adminToolsCompactBrand = function_exists('admin_tools_setting_bool') && admin_tools_setting_bool('compact_brand_enabled', true);
+    $adminToolsHasBrand = ! function_exists('admin_tools_has_admin_brand') || admin_tools_has_admin_brand();
 @endphp
 
 <header
-    class="navbar navbar-expand-md d-print-none"
+    @class([
+        'navbar navbar-expand-md d-print-none',
+        'entomai-header-left-navbar' => $adminToolsCompactBrand,
+    ])
     data-bs-theme="dark"
 >
     <div class="{{ AdminAppearance::getContainerWidth() }}">
@@ -20,9 +25,11 @@
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
-            @include('core/base::partials.logo')
-        </h1>
+        @if ($adminToolsHasBrand)
+            <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3 entomai-admin-brand">
+                @include('plugins/admin-tools::partials.admin-brand')
+            </h1>
+        @endif
 
         @auth
             {!! apply_filters(BASE_FILTER_TOP_HEADER_LAYOUT, null) !!}

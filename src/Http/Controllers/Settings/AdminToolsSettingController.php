@@ -30,9 +30,62 @@ class AdminToolsSettingController extends SettingController
     public function update(AdminToolsSettingRequest $request): BaseHttpResponse
     {
         $data = $request->validated();
+        $data = array_diff_key($data, array_flip($this->inactivePluginSettingKeys()));
+
         $data['admin_tools_hidden_header_hook_items'] = $request->input('admin_tools_hidden_header_hook_items', []);
 
+        foreach ($this->activePluginArraySettings() as $key) {
+            $data["admin_tools_$key"] = $request->input("admin_tools_$key", []);
+        }
+
         return $this->performUpdate($data);
+    }
+
+    protected function inactivePluginSettingKeys(): array
+    {
+        $settings = [
+            'ecommerce' => [
+                'admin_tools_ecommerce_header_menu_enabled',
+                'admin_tools_ecommerce_notifications_enabled',
+                'admin_tools_ecommerce_notification_statuses',
+            ],
+            'contact' => [
+                'admin_tools_contact_notifications_enabled',
+                'admin_tools_contact_notification_statuses',
+            ],
+            'payment' => [
+                'admin_tools_payment_notifications_enabled',
+                'admin_tools_payment_notification_statuses',
+            ],
+            'hotel' => [
+                'admin_tools_hotel_booking_notification_statuses',
+            ],
+        ];
+
+        $inactive = [];
+
+        foreach ($settings as $plugin => $keys) {
+            if (! $this->isPluginActive($plugin)) {
+                $inactive = array_merge($inactive, $keys);
+            }
+        }
+
+        return $inactive;
+    }
+
+    protected function activePluginArraySettings(): array
+    {
+        return array_keys(array_filter([
+            'ecommerce_notification_statuses' => $this->isPluginActive('ecommerce'),
+            'contact_notification_statuses' => $this->isPluginActive('contact'),
+            'payment_notification_statuses' => $this->isPluginActive('payment'),
+            'hotel_booking_notification_statuses' => $this->isPluginActive('hotel'),
+        ]));
+    }
+
+    protected function isPluginActive(string $plugin): bool
+    {
+        return function_exists('is_plugin_active') && is_plugin_active($plugin);
     }
 
     public function updateSelected(Request $request, AdminToolsUpdateService $updateService): RedirectResponse

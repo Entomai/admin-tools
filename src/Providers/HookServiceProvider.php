@@ -490,17 +490,49 @@ class HookServiceProvider extends ServiceProvider
     protected function getDefaultItems(): array
     {
         return array_values(array_filter([
-            $this->routeItem(
-                'pages.index',
+            $this->groupItem(
+                'admin-tools-fast-menu-pages',
                 trans('plugins/admin-tools::admin-tools.pages'),
                 'ti ti-file-text',
-                'pages.index'
+                [
+                    $this->routeItem(
+                        'pages.index',
+                        trans('plugins/admin-tools::admin-tools.all_pages'),
+                        'ti ti-list',
+                        'pages.index'
+                    ),
+                    $this->routeItem(
+                        'pages.create',
+                        trans('plugins/admin-tools::admin-tools.add_new'),
+                        'ti ti-circle-plus',
+                        'pages.create'
+                    ),
+                ]
             ),
-            $this->routeItem(
-                'posts.index',
+            $this->groupItem(
+                'admin-tools-fast-menu-posts',
                 trans('plugins/admin-tools::admin-tools.posts'),
                 'ti ti-article',
-                'posts.index'
+                [
+                    $this->routeItem(
+                        'posts.index',
+                        trans('plugins/admin-tools::admin-tools.all_posts'),
+                        'ti ti-list',
+                        'posts.index'
+                    ),
+                    $this->routeItem(
+                        'posts.create',
+                        trans('plugins/admin-tools::admin-tools.add_new'),
+                        'ti ti-circle-plus',
+                        'posts.create'
+                    ),
+                ]
+            ),
+            $this->groupItem(
+                'admin-tools-fast-menu-add-new',
+                trans('plugins/admin-tools::admin-tools.add_new'),
+                'ti ti-circle-plus',
+                $this->getCreateItems()
             ),
             $this->groupItem(
                 'admin-tools-fast-menu-plugins',
@@ -563,6 +595,54 @@ class HookServiceProvider extends ServiceProvider
                 trans('plugins/admin-tools::admin-tools.admin_tools_settings'),
                 'ti ti-bolt',
                 'admin-tools.settings'
+            ),
+        ]));
+    }
+
+    protected function getCreateItems(): array
+    {
+        return array_values(array_filter([
+            $this->routeItem(
+                'pages.create',
+                trans('plugins/admin-tools::admin-tools.page'),
+                'ti ti-file-plus',
+                'pages.create'
+            ),
+            $this->routeItem(
+                'posts.create',
+                trans('plugins/admin-tools::admin-tools.post'),
+                'ti ti-news',
+                'posts.create'
+            ),
+            $this->routeItem(
+                'products.create',
+                trans('plugins/admin-tools::admin-tools.product'),
+                'ti ti-box',
+                'products.create'
+            ),
+            $this->routeItem(
+                'booking.create',
+                trans('plugins/admin-tools::admin-tools.booking'),
+                'ti ti-calendar-plus',
+                'booking.create'
+            ),
+            $this->routeItem(
+                'room.create',
+                trans('plugins/admin-tools::admin-tools.room'),
+                'ti ti-bed',
+                'room.create'
+            ),
+            $this->routeItem(
+                'customer.create',
+                trans('plugins/admin-tools::admin-tools.hotel_customer'),
+                'ti ti-user-plus',
+                'customer.create'
+            ),
+            $this->routeItem(
+                'customers.create',
+                trans('plugins/admin-tools::admin-tools.ecommerce_customer'),
+                'ti ti-user-plus',
+                'customers.create'
             ),
         ]));
     }
@@ -698,9 +778,18 @@ class HookServiceProvider extends ServiceProvider
         }
 
         try {
-            $status = class_exists($statusClass) ? $statusClass::PENDING : 'pending';
+            $statuses = $this->selectedNotificationStatuses(
+                'ecommerce_notification_statuses',
+                $statusClass,
+                [class_exists($statusClass) ? $statusClass::PENDING : 'pending']
+            );
+
+            if ($statuses === []) {
+                return null;
+            }
+
             $query = $orderClass::query()
-                ->where('status', $status)
+                ->whereIn('status', $statuses)
                 ->where('is_finished', 1);
             $count = (clone $query)->count();
 
@@ -723,7 +812,7 @@ class HookServiceProvider extends ServiceProvider
                 'view_all_url' => route('orders.index'),
                 'view_all_label' => trans('plugins/admin-tools::admin-tools.notifications_view_all'),
                 'empty_message' => trans('plugins/admin-tools::admin-tools.notifications_orders_empty'),
-                'items' => $orders->map(function ($order) use ($canEditOrders): array {
+                'items' => $orders->map(function ($order) use ($canEditOrders, $statusClass): array {
                     $name = $order->address->name ?: $order->user->name;
 
                     return [
@@ -732,7 +821,7 @@ class HookServiceProvider extends ServiceProvider
                         'url' => $canEditOrders ? route('orders.edit', $order->getKey()) : route('orders.index'),
                         'time' => $order->created_at,
                         'avatar' => $order->user->id ? $order->user->avatar_url : $order->address->avatar_url,
-                        'meta' => trans('plugins/admin-tools::admin-tools.notifications_orders_meta'),
+                        'meta' => $this->getStatusLabel($order->status, $statusClass, trans('plugins/admin-tools::admin-tools.notifications_orders_meta')),
                     ];
                 })->all(),
             ];
@@ -759,12 +848,21 @@ class HookServiceProvider extends ServiceProvider
         }
 
         try {
-            $status = class_exists($statusClass) ? $statusClass::UNREAD : 'unread';
-            $query = $contactClass::query()->where('status', $status);
+            $statuses = $this->selectedNotificationStatuses(
+                'contact_notification_statuses',
+                $statusClass,
+                [class_exists($statusClass) ? $statusClass::UNREAD : 'unread']
+            );
+
+            if ($statuses === []) {
+                return null;
+            }
+
+            $query = $contactClass::query()->whereIn('status', $statuses);
             $count = (clone $query)->count();
 
             $contacts = $query
-                ->select(['id', 'name', 'email', 'phone', 'subject', 'created_at'])
+                ->select(['id', 'name', 'email', 'phone', 'subject', 'status', 'created_at'])
                 ->latest()
                 ->limit(8)
                 ->get();
@@ -782,14 +880,14 @@ class HookServiceProvider extends ServiceProvider
                 'view_all_url' => route('contacts.index'),
                 'view_all_label' => trans('plugins/admin-tools::admin-tools.notifications_view_all'),
                 'empty_message' => trans('plugins/admin-tools::admin-tools.notifications_contacts_empty'),
-                'items' => $contacts->map(function ($contact) use ($canEditContacts): array {
+                'items' => $contacts->map(function ($contact) use ($canEditContacts, $statusClass): array {
                     return [
                         'title' => $contact->name,
                         'description' => $contact->subject ?: trim(implode(' - ', array_filter([$contact->phone, $contact->email]))),
                         'url' => $canEditContacts ? route('contacts.edit', $contact->getKey()) : route('contacts.index'),
                         'time' => $contact->created_at,
                         'avatar' => $contact->avatar_url,
-                        'meta' => trans('plugins/admin-tools::admin-tools.notifications_contacts_meta'),
+                        'meta' => $this->getStatusLabel($contact->status, $statusClass, trans('plugins/admin-tools::admin-tools.notifications_contacts_meta')),
                     ];
                 })->all(),
             ];
@@ -812,8 +910,17 @@ class HookServiceProvider extends ServiceProvider
         }
 
         try {
-            $status = class_exists($statusClass) ? $statusClass::PENDING : 'pending';
-            $query = $paymentClass::query()->where('status', $status);
+            $statuses = $this->selectedNotificationStatuses(
+                'payment_notification_statuses',
+                $statusClass,
+                [class_exists($statusClass) ? $statusClass::PENDING : 'pending']
+            );
+
+            if ($statuses === []) {
+                return null;
+            }
+
+            $query = $paymentClass::query()->whereIn('status', $statuses);
             $count = (clone $query)->count();
 
             $payments = $query
@@ -833,14 +940,14 @@ class HookServiceProvider extends ServiceProvider
                 'view_all_url' => route('payment.index'),
                 'view_all_label' => trans('plugins/admin-tools::admin-tools.notifications_view_all'),
                 'empty_message' => trans('plugins/admin-tools::admin-tools.notifications_payments_empty'),
-                'items' => $payments->map(function ($payment): array {
+                'items' => $payments->map(function ($payment) use ($statusClass): array {
                     return [
                         'title' => $payment->charge_id ?: '#'.$payment->getKey(),
                         'description' => trim($this->getPaymentChannelName($payment).' - '.$this->formatMoney($payment->amount, $payment->currency)),
                         'url' => Route::has('payment.show') ? route('payment.show', $payment->getKey()) : route('payment.index'),
                         'time' => $payment->created_at,
                         'icon' => 'ti ti-credit-card-pay',
-                        'meta' => trans('plugins/admin-tools::admin-tools.notifications_payments_meta'),
+                        'meta' => $this->getStatusLabel($payment->status, $statusClass, trans('plugins/admin-tools::admin-tools.notifications_payments_meta')),
                     ];
                 })->all(),
             ];
@@ -1263,6 +1370,45 @@ class HookServiceProvider extends ServiceProvider
         $id = trim(preg_replace('/[^A-Za-z0-9\-_:.]+/', '-', $id) ?: '', '-');
 
         return $id !== '' ? $id : 'admin-tools-header-item-'.md5($originalId);
+    }
+
+    protected function selectedNotificationStatuses(string $settingKey, string $enumClass, array $default): array
+    {
+        $statuses = array_values(array_filter(array_map(
+            fn (mixed $status): ?string => is_scalar($status) ? trim((string) $status) : null,
+            admin_tools_setting_array($settingKey, $default)
+        )));
+
+        if ($statuses === []) {
+            return [];
+        }
+
+        if (! class_exists($enumClass) || ! method_exists($enumClass, 'toArray')) {
+            return $statuses;
+        }
+
+        $allowedStatuses = array_values($enumClass::toArray());
+
+        return array_values(array_intersect($statuses, $allowedStatuses));
+    }
+
+    protected function getStatusLabel(mixed $status, string $enumClass, string $fallback): string
+    {
+        if (is_object($status) && method_exists($status, 'label')) {
+            return (string) $status->label();
+        }
+
+        if (is_object($status) && method_exists($status, 'getValue')) {
+            $status = $status->getValue();
+        }
+
+        $status = is_scalar($status) ? (string) $status : '';
+
+        if ($status !== '' && class_exists($enumClass) && method_exists($enumClass, 'getLabel')) {
+            return (string) $enumClass::getLabel($status);
+        }
+
+        return $fallback;
     }
 
     protected function normalizeCssModifier(string $value): string

@@ -2,7 +2,39 @@
     min-width: 0;
 }
 
+.entomai-admin-brand {
+    min-width: 0;
+}
+
+.entomai-admin-brand-link {
+    align-items: center;
+    color: inherit;
+    display: inline-flex;
+    gap: 0.5rem;
+    max-width: 100%;
+    min-width: 0;
+    text-decoration: none;
+}
+
+.entomai-admin-brand-link:hover {
+    color: inherit;
+    text-decoration: none;
+}
+
+.entomai-admin-brand-text {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    max-width: 8.5rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 header.navbar.entomai-header-left-navbar.navbar-expand-md .navbar-brand {
+    min-width: 0;
     width: 10rem !important;
 }
 

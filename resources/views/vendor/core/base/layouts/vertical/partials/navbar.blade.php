@@ -1,12 +1,16 @@
 @php
     $adminToolsHideGlobalSearch = function_exists('admin_tools_setting_bool') && admin_tools_setting_bool('hide_global_search', false);
     $adminToolsHideViewWebsite = function_exists('admin_tools_setting_bool') && admin_tools_setting_bool('hide_view_website_button', false);
+    $adminToolsCompactBrand = function_exists('admin_tools_setting_bool') && admin_tools_setting_bool('compact_brand_enabled', true);
 @endphp
 
 @include('core/base::layouts.' . AdminAppearance::getCurrentLayout() . '.partials.aside')
 
 <header
-    class="navbar navbar-expand-md d-none d-lg-flex d-print-none"
+    @class([
+        'navbar navbar-expand-md d-none d-lg-flex d-print-none',
+        'entomai-header-left-navbar' => $adminToolsCompactBrand,
+    ])
     data-bs-theme="dark"
 >
     <div class="{{ AdminAppearance::getContainerWidth() }}">

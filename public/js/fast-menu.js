@@ -3,16 +3,17 @@
         const headerLeft = document.querySelector('[data-entomai-header-left]')
         const brand = document.querySelector('header.navbar .navbar-brand')
         const hasContent = headerLeft?.children.length > 0
+        const isInline = headerLeft?.dataset.entomaiHeaderInline === '1'
 
         if (!headerLeft || !brand || headerLeft.dataset.moved === '1') {
             return
         }
 
-        if (headerLeft.dataset.entomaiCompactBrand === '1') {
+        if (headerLeft.dataset.entomaiCompactBrand === '1' && !isInline) {
             brand.closest('header.navbar')?.classList.add('entomai-header-left-navbar')
         }
 
-        if (headerLeft.dataset.entomaiHeaderInline === '1') {
+        if (isInline) {
             return
         }
 

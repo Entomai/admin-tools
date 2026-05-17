@@ -64,6 +64,30 @@ if (! function_exists('admin_tools_setting_array')) {
     }
 }
 
+if (! function_exists('admin_tools_brand_custom_text')) {
+    function admin_tools_brand_custom_text(): string
+    {
+        $value = admin_tools_setting('brand_custom_text', '');
+
+        return is_scalar($value) ? trim((string) $value) : '';
+    }
+}
+
+if (! function_exists('admin_tools_should_show_brand_logo')) {
+    function admin_tools_should_show_brand_logo(): bool
+    {
+        return ! admin_tools_setting_bool('remove_logo_enabled', false)
+            && (bool) (setting('admin_logo') || config('core.base.general.logo'));
+    }
+}
+
+if (! function_exists('admin_tools_has_admin_brand')) {
+    function admin_tools_has_admin_brand(): bool
+    {
+        return admin_tools_should_show_brand_logo() || admin_tools_brand_custom_text() !== '';
+    }
+}
+
 if (! function_exists('admin_tools_admin_appearance_fields')) {
     function admin_tools_admin_appearance_fields(): array
     {
