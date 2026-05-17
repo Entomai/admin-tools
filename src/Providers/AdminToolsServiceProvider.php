@@ -2,6 +2,7 @@
 
 namespace Botble\AdminTools\Providers;
 
+use Botble\AdminTools\Package\PackageServiceProvider as EntomaiPackageServiceProvider;
 use Botble\AdminTools\Supports\AdminAppearance as AdminToolsAdminAppearance;
 use Botble\Base\Facades\PanelSectionManager;
 use Botble\Base\PanelSections\PanelSectionItem;
@@ -33,6 +34,9 @@ class AdminToolsServiceProvider extends ServiceProvider
             ->loadAndPublishViews()
             ->loadAndPublishTranslations()
             ->publishAssets();
+
+        EntomaiPackageServiceProvider::loadForPlugin('admin-tools');
+        $this->app->register(EntomaiPackageServiceProvider::class);
 
         $this->app->register(HookServiceProvider::class);
 

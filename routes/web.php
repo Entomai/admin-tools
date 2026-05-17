@@ -3,6 +3,7 @@
 use Botble\AdminTools\Http\Controllers\AdminAppearancePreferenceController;
 use Botble\AdminTools\Http\Controllers\AdminToolsCacheController;
 use Botble\AdminTools\Http\Controllers\Settings\AdminToolsSettingController;
+use Botble\AdminTools\Package\Http\Controllers\PrivateUpdaterController as EntomaiPrivatePluginUpdateController;
 use Botble\Base\Facades\AdminHelper;
 use Illuminate\Support\Facades\Route;
 
@@ -33,4 +34,19 @@ AdminHelper::registerRoutes(function (): void {
             ->name('admin-appearance.update')
             ->middleware('preventDemo');
     });
+
+    if (! Route::has('entomai.private-updater.check')) {
+        Route::group([
+            'prefix' => 'entomai/private-plugin-updater',
+            'as' => 'entomai.private-updater.',
+            'permission' => 'plugins.index',
+        ], function (): void {
+            Route::post('check', [EntomaiPrivatePluginUpdateController::class, 'check'])
+                ->name('check');
+
+            Route::post('{plugin}/update', [EntomaiPrivatePluginUpdateController::class, 'update'])
+                ->name('update')
+                ->middleware('preventDemo');
+        });
+    }
 });
