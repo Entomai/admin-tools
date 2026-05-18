@@ -10,6 +10,7 @@ use Botble\Base\Supports\AdminAppearance as BaseAdminAppearance;
 use Botble\Base\Supports\ServiceProvider;
 use Botble\Base\Traits\LoadAndPublishDataTrait;
 use Botble\Setting\PanelSections\SettingOthersPanelSection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Facade;
 
 class AdminToolsServiceProvider extends ServiceProvider
@@ -40,6 +41,8 @@ class AdminToolsServiceProvider extends ServiceProvider
 
         $this->app->register(HookServiceProvider::class);
 
+        $this->registerEntomaiPluginsMenuVisibility();
+
         PanelSectionManager::default()->beforeRendering(function (): void {
             PanelSectionManager::registerItem(
                 SettingOthersPanelSection::class,
@@ -52,5 +55,38 @@ class AdminToolsServiceProvider extends ServiceProvider
                     ->withRoute('admin-tools.settings')
             );
         });
+    }
+
+    protected function registerEntomaiPluginsMenuVisibility(): void
+    {
+        PanelSectionManager::default()->beforeRendering(function (): void {
+            if (! admin_tools_setting_bool('entomai_plugins_menu_enabled', true)) {
+                PanelSectionManager::ignoreItemId('entomai-plugins');
+            }
+        }, PHP_INT_MAX);
+
+        add_action('rendered_dashboard_menu', [$this, 'removeEntomaiPluginsDashboardMenuItem'], PHP_INT_MAX, 2);
+    }
+
+    public function removeEntomaiPluginsDashboardMenuItem(mixed $menu, Collection $items): void
+    {
+        if (admin_tools_setting_bool('entomai_plugins_menu_enabled', true)) {
+            return;
+        }
+
+        $this->removeDashboardMenuItem($items, 'cms-entomai-plugins');
+    }
+
+    protected function removeDashboardMenuItem(Collection $items, string $id): void
+    {
+        $items->forget($id);
+
+        foreach ($items as $item) {
+            $children = $item['children'] ?? null;
+
+            if ($children instanceof Collection) {
+                $this->removeDashboardMenuItem($children, $id);
+            }
+        }
     }
 }

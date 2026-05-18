@@ -162,7 +162,10 @@ class PackageServiceProvider extends ServiceProvider
 
     public function addFastMenuItem(array $items): array
     {
-        if (! Route::has('entomai.plugins.index')) {
+        if (
+            ! Route::has('entomai.plugins.index')
+            || ! admin_tools_setting_bool('entomai_plugins_menu_enabled', true)
+        ) {
             return $items;
         }
 

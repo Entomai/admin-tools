@@ -17,6 +17,9 @@ admin-tools.settings
 ## Available Toggles
 
 - `admin_tools_fast_menu_enabled`: show or hide the default Fast menu.
+- `admin_tools_fast_cache_cleaner_enabled`: show or hide the Fast cache cleaner in the admin header.
+- `admin_tools_fast_cache_clear_log_enabled`: show the log clearing action and include it in Clear all. Disabled by default.
+- `admin_tools_entomai_plugins_menu_enabled`: show or hide the Entomai Plugins shortcut, Settings menu item, and Settings panel card.
 - `admin_tools_ecommerce_header_menu_enabled`: show or hide the built-in Ecommerce header menu.
 - `admin_tools_ecommerce_notifications_enabled`: show or hide the built-in order notification.
 - `admin_tools_contact_notifications_enabled`: show or hide the built-in contact notification.

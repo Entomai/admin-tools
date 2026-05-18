@@ -33,6 +33,7 @@ class HookServiceProvider extends ServiceProvider
             Assets::addStylesDirectly('vendor/core/plugins/admin-tools/css/fast-menu.css?v='.$assetVersion)
                 ->addScriptsDirectly('vendor/core/plugins/admin-tools/js/fast-menu.js?v='.$assetVersion);
 
+            add_filter(ADMIN_TOOLS_FILTER_FAST_MENU_ITEMS, [$this, 'filterFastMenuItems'], PHP_INT_MAX);
             add_filter(ADMIN_TOOLS_FILTER_HEADER_MENUS, [$this, 'registerEcommerceHeaderMenu']);
             add_filter(ADMIN_TOOLS_FILTER_HEADER_MENU_ITEMS, [$this, 'registerEcommerceHeaderMenuItems'], 20, 3);
             add_filter(ADMIN_TOOLS_FILTER_HEADER_NOTIFICATIONS, [$this, 'registerEcommerceHeaderNotifications']);
@@ -41,6 +42,18 @@ class HookServiceProvider extends ServiceProvider
             add_filter(BASE_FILTER_HEAD_LAYOUT_TEMPLATE, [$this, 'renderAdminAppearanceHead'], 40);
             add_filter(BASE_FILTER_HEADER_LAYOUT_TEMPLATE, [$this, 'renderAdminAppearanceBodyScript'], 1);
         });
+    }
+
+    public function filterFastMenuItems(array $items): array
+    {
+        if (admin_tools_setting_bool('entomai_plugins_menu_enabled', true)) {
+            return $items;
+        }
+
+        return array_values(array_filter(
+            $items,
+            fn ($item): bool => ! is_array($item) || ($item['id'] ?? null) !== 'admin-tools-fast-menu-entomai-plugins'
+        ));
     }
 
     protected function registerHeaderViewOverrides(): void
@@ -161,7 +174,8 @@ class HookServiceProvider extends ServiceProvider
                 });
             }
 
-            $fastMenuItems = $this->normalizeItems(is_array($fastMenuItems) ? $fastMenuItems : []);
+            $fastMenuItems = $this->filterFastMenuItems(is_array($fastMenuItems) ? $fastMenuItems : []);
+            $fastMenuItems = $this->normalizeItems($fastMenuItems);
         }
 
         $headerLeftItems = apply_filters(ADMIN_TOOLS_FILTER_HEADER_LEFT_ITEMS, array_merge(

@@ -11,6 +11,8 @@ class AdminToolsSettingRequest extends Request
         $rules = [
             'admin_tools_fast_menu_enabled' => ['nullable', 'boolean'],
             'admin_tools_fast_cache_cleaner_enabled' => ['nullable', 'boolean'],
+            'admin_tools_fast_cache_clear_log_enabled' => ['nullable', 'boolean'],
+            'admin_tools_entomai_plugins_menu_enabled' => ['nullable', 'boolean'],
             'admin_tools_ecommerce_header_menu_enabled' => ['nullable', 'boolean'],
             'admin_tools_ecommerce_notifications_enabled' => ['nullable', 'boolean'],
             'admin_tools_contact_notifications_enabled' => ['nullable', 'boolean'],

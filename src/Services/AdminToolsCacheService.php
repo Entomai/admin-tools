@@ -15,7 +15,7 @@ class AdminToolsCacheService
 
     public function commands(): array
     {
-        return [
+        $commands = [
             'clear_cms_cache' => [
                 'type' => 'clear_cms_cache',
                 'title' => trans('core/base::cache.commands.clear_cms_cache.title'),
@@ -56,7 +56,10 @@ class AdminToolsCacheService
                 'button_label' => trans('core/base::cache.clear_button'),
                 'show_size' => false,
             ],
-            'clear_log' => [
+        ];
+
+        if (admin_tools_setting_bool('fast_cache_clear_log_enabled', false)) {
+            $commands['clear_log'] = [
                 'type' => 'clear_log',
                 'title' => trans('core/base::cache.commands.clear_log.title'),
                 'description' => trans('core/base::cache.commands.clear_log.description'),
@@ -65,8 +68,10 @@ class AdminToolsCacheService
                 'button_icon' => 'ti ti-trash',
                 'button_label' => trans('core/base::cache.clear_button'),
                 'show_size' => false,
-            ],
-        ];
+            ];
+        }
+
+        return $commands;
     }
 
     public function types(): array
@@ -112,7 +117,9 @@ class AdminToolsCacheService
             'refresh_compiled_views' => $this->clearCacheService->clearCompiledViews(),
             'clear_config_cache' => $this->clearCacheService->clearConfig(),
             'clear_route_cache' => $this->clearCacheService->clearRoutesCache(),
-            'clear_log' => $this->clearCacheService->clearLogs(),
+            'clear_log' => admin_tools_setting_bool('fast_cache_clear_log_enabled', false)
+                ? $this->clearCacheService->clearLogs()
+                : throw new InvalidArgumentException(trans('plugins/admin-tools::admin-tools.fast_cache_invalid_type')),
             default => throw new InvalidArgumentException(trans('plugins/admin-tools::admin-tools.fast_cache_invalid_type')),
         };
     }

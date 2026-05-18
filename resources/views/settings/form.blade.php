@@ -18,8 +18,16 @@
                 'label' => trans('plugins/admin-tools::admin-tools.settings_tab_shortcuts'),
                 'fields' => [
                     'admin_tools_fast_menu_enabled',
-                    'admin_tools_fast_cache_cleaner_enabled',
+                    'admin_tools_entomai_plugins_menu_enabled',
                     'admin_tools_ecommerce_header_menu_enabled',
+                ],
+            ],
+            [
+                'id' => 'admin-tools-settings-cache',
+                'label' => trans('plugins/admin-tools::admin-tools.settings_tab_cache'),
+                'fields' => [
+                    'admin_tools_fast_cache_cleaner_enabled',
+                    'admin_tools_fast_cache_clear_log_enabled',
                 ],
             ],
             [

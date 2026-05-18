@@ -25,6 +25,8 @@ class AdminToolsSettingForm extends SettingForm
             ->setValidatorClass(AdminToolsSettingRequest::class)
             ->addSwitch('fast_menu_enabled')
             ->addSwitch('fast_cache_cleaner_enabled')
+            ->addSwitch('fast_cache_clear_log_enabled', false)
+            ->addSwitch('entomai_plugins_menu_enabled')
             ->when($this->isPluginActive('ecommerce'), function (self $form): void {
                 $form
                     ->addSwitch('ecommerce_header_menu_enabled')
