@@ -5,7 +5,7 @@
     "provider": "Botble\\AdminTools\\Providers\\AdminToolsServiceProvider",
     "author": "Entomai",
     "url": "https://entomai.com",
-    "version": "1.2.5",
+    "version": "1.2.6",
     "description": "Admin tools and shortcuts for Botble CMS",
     "minimum_core_version": "7.6.3",
     "entomai_updater": {

@@ -207,6 +207,7 @@ class HookServiceProvider extends ServiceProvider
 
         $hiddenItems = $this->hiddenHeaderHookItemIds();
         $hideBotbleNotification = admin_tools_setting_bool('hide_botble_notification', false);
+        $hideDefaultContactNotification = $this->shouldHideDefaultContactNotification();
         $catalogItems = [];
         $filteredFragments = [];
 
@@ -223,6 +224,7 @@ class HookServiceProvider extends ServiceProvider
 
                 if (
                     ($id === 'botble-admin-notification' && $hideBotbleNotification)
+                    || ($id === 'contact-notification' && $hideDefaultContactNotification)
                     || in_array($id, $hiddenItems, true)
                 ) {
                     continue;
@@ -306,6 +308,13 @@ class HookServiceProvider extends ServiceProvider
             ];
         }
 
+        if ($this->isContactNotificationFragment($html)) {
+            return [
+                'id' => 'contact-notification',
+                'label' => trans('plugins/admin-tools::admin-tools.header_hook_item_contact_notification'),
+            ];
+        }
+
         $id = $this->getHeaderFragmentId($html, $element);
         $label = $this->getHeaderFragmentLabel($html, $element);
 
@@ -332,6 +341,59 @@ class HookServiceProvider extends ServiceProvider
         }
 
         return str_contains($html, 'icon-tabler-mail') && str_contains(Str::lower($html), 'booking');
+    }
+
+    protected function isContactNotificationFragment(string $html): bool
+    {
+        if (! Route::has('contacts.index')) {
+            return false;
+        }
+
+        try {
+            $contactsIndexUrl = route('contacts.index');
+        } catch (Throwable) {
+            return false;
+        }
+
+        $contactsIndexPath = parse_url($contactsIndexUrl, PHP_URL_PATH) ?: null;
+        $containsContactsIndex = str_contains($html, $contactsIndexUrl)
+            || ($contactsIndexPath && str_contains($html, $contactsIndexPath));
+
+        if (! $containsContactsIndex) {
+            return false;
+        }
+
+        $normalizedHtml = Str::lower($html);
+
+        return str_contains($normalizedHtml, 'icon-tabler-mail')
+            && str_contains($normalizedHtml, 'badge bg-red')
+            && str_contains($normalizedHtml, 'dropdown-menu-card');
+    }
+
+    protected function shouldHideDefaultContactNotification(): bool
+    {
+        $contactClass = 'Botble\Contact\Models\Contact';
+        $statusClass = 'Botble\Contact\Enums\ContactStatusEnum';
+
+        if (! admin_tools_setting_bool('contact_notifications_enabled', true)) {
+            return false;
+        }
+
+        if (! $this->isPluginReady('contact', [$contactClass], ['contacts.index'])) {
+            return false;
+        }
+
+        if (! $this->userCan('contacts.index')) {
+            return false;
+        }
+
+        $unreadStatus = class_exists($statusClass) ? $statusClass::UNREAD : 'unread';
+
+        return in_array(
+            $unreadStatus,
+            $this->selectedNotificationStatuses('contact_notification_statuses', $statusClass, [$unreadStatus]),
+            true
+        );
     }
 
     protected function getHeaderFragmentId(string $html, ?DOMElement $element = null): string

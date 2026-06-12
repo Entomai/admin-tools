@@ -468,6 +468,13 @@ if (! function_exists('admin_tools_header_hook_item_choices')) {
         }
 
         if (
+            in_array('contact-notification', $hiddenItems, true)
+            || (function_exists('is_plugin_active') && is_plugin_active('contact'))
+        ) {
+            $choices['contact-notification'] = trans('plugins/admin-tools::admin-tools.header_hook_item_contact_notification');
+        }
+
+        if (
             in_array('hotel-pro-booking-notification', $hiddenItems, true)
             || (function_exists('is_plugin_active') && is_plugin_active('hotel-pro'))
         ) {
