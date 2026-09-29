@@ -38,6 +38,38 @@
         }
 
         document.body.classList.add('entomai-admin-sticky-shell')
+
+        // Anything rendered above #app (Botble's license warning bar, other top notices) pushes
+        // the 100vh shell below the window, and body scrolling is off in this mode - so the last
+        // sidebar items and the bottom of its scrollbar could never be reached. The shell height
+        // subtracts that offset instead, kept in sync if the bar changes or is dismissed.
+        const app = document.getElementById('app')
+
+        if (!app) {
+            return
+        }
+
+        const syncOffset = () => {
+            const offset = Math.max(0, Math.round(app.getBoundingClientRect().top + window.scrollY))
+
+            document.documentElement.style.setProperty('--entomai-shell-offset', `${offset}px`)
+        }
+
+        syncOffset()
+        window.addEventListener('resize', syncOffset)
+
+        if ('ResizeObserver' in window) {
+            const observer = new ResizeObserver(syncOffset)
+
+            observer.observe(document.body)
+
+            let previous = app.previousElementSibling
+
+            while (previous) {
+                observer.observe(previous)
+                previous = previous.previousElementSibling
+            }
+        }
     }
 
     function bindSubMenus() {
