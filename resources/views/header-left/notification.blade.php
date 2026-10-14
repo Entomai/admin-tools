@@ -13,7 +13,7 @@
         aria-label="{{ $notification['title'] }}"
     >
         <x-core::icon :name="$notification['icon']" />
-        <span class="entomai-header-notification__badge">{{ number_format($notification['count']) }}</span>
+        <span class="entomai-header-notification__badge">{{ $notification['count'] > 99 ? '99+' : number_format($notification['count']) }}</span>
     </button>
 
     <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-card entomai-header-notification__menu">
