@@ -996,7 +996,7 @@ class HookServiceProvider extends ServiceProvider
                 return null;
             }
 
-            $query = $paymentClass::query()->whereIn('status', $statuses);
+            $query = apply_filters('admin_tools_payment_notification_query', $paymentClass::query()->whereIn('status', $statuses));
             $count = (clone $query)->count();
 
             $payments = $query
